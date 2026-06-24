@@ -2,7 +2,7 @@
    Estrategia: la "cáscara" (HTML, ícono, manifest) se cachea para abrir rápido y
    offline; las llamadas al backend de Apps Script NO se cachean (datos siempre frescos).
    Para forzar actualización de la cáscara, subir la versión del CACHE. */
-const CACHE = 'pitbulls-shell-v2';
+const CACHE = 'pitbulls-shell-v3';
 const SHELL = [
   './',
   './index.html',
@@ -10,7 +10,8 @@ const SHELL = [
   './icon-192.png',
   './icon-512.png',
   './apple-touch-icon.png',
-  './favicon-32.png'
+  './favicon-32.png',
+  './splash.jpg'
 ];
 
 self.addEventListener('install', function (e) {

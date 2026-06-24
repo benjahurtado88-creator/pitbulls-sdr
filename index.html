@@ -187,53 +187,29 @@
     color:var(--muted);font-size:10px;cursor:pointer;border:0;background:none;padding-top:6px;white-space:nowrap;overflow:hidden}
   .nav .item .ic{font-size:20px;line-height:1}
   .nav .item.on{color:var(--accent)}
-  /* splash de entrada: pitbull rabioso animado, se va solo al ~1.35s */
+  /* splash de entrada: pitbull rabioso (foto real) animado, se va solo al ~1.6s */
   .splash{position:fixed;inset:0;z-index:9999;background:radial-gradient(circle at 50% 36%,#5e1712,#141416 72%);
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
-    animation:splashOut .45s ease 1.35s forwards}
-  .splash svg{display:block;width:172px;height:172px;transform-origin:center;
-    filter:drop-shadow(0 8px 24px rgba(0,0,0,.55));animation:rage .08s steps(2,jump-none) infinite}
-  .splash .glow{animation:eyepulse .5s ease-in-out infinite}
+    animation:splashOut .5s ease 1.6s forwards}
+  .splash .dogwrap{position:relative;width:184px;height:184px;border-radius:44px;overflow:hidden;
+    box-shadow:0 12px 34px rgba(0,0,0,.55);transform-origin:center;animation:rage .09s steps(2,jump-none) infinite}
+  .splash .dog{width:100%;height:100%;object-fit:cover;display:block;transform-origin:center;
+    animation:lunge 2.4s ease-in-out infinite alternate}
+  .splash .rage{position:absolute;inset:0;border-radius:44px;pointer-events:none;animation:ragepulse .55s ease-in-out infinite}
   .splash .ttl{color:#f4f1ea;font-weight:800;letter-spacing:4px;font-size:17px;opacity:.92}
   .splash .ldr{width:46px;height:3px;border-radius:3px;background:#ff3a14;animation:ldr 1s ease-in-out infinite}
-  @keyframes rage{0%{transform:translateX(-2px) rotate(-1.1deg)}100%{transform:translateX(2px) rotate(1.1deg)}}
-  @keyframes eyepulse{0%,100%{opacity:.4}50%{opacity:1}}
+  @keyframes rage{0%{transform:translate(-2px,0) rotate(-1deg)}25%{transform:translate(2px,1px) rotate(1deg)}
+    50%{transform:translate(-2px,-1px) rotate(-1deg)}75%{transform:translate(2px,0) rotate(1deg)}100%{transform:translate(-2px,0) rotate(-1deg)}}
+  @keyframes lunge{0%{transform:scale(1.04)}100%{transform:scale(1.16)}}
+  @keyframes ragepulse{0%,100%{box-shadow:inset 0 0 40px 6px rgba(255,40,12,0)}50%{box-shadow:inset 0 0 72px 16px rgba(255,40,12,.55)}}
   @keyframes ldr{0%,100%{transform:scaleX(.5);opacity:.5}50%{transform:scaleX(1);opacity:1}}
   @keyframes splashOut{to{opacity:0;visibility:hidden}}
-  @media (prefers-reduced-motion:reduce){.splash svg,.splash .glow,.splash .ldr{animation:none}}
+  @media (prefers-reduced-motion:reduce){.splash .dogwrap,.splash .dog,.splash .rage,.splash .ldr{animation:none}}
 </style>
 </head>
 <body>
 <div class="splash" id="splash" aria-hidden="true">
-  <svg viewBox="0 0 512 512" role="img" aria-label="Pitbulls">
-    <defs>
-      <linearGradient id="sfur" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#cfc7bd"/><stop offset="100%" stop-color="#8f867b"/></linearGradient>
-      <radialGradient id="seye" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#ffe28a"/><stop offset="45%" stop-color="#ff8a1e"/><stop offset="100%" stop-color="#c01505"/></radialGradient>
-      <filter id="sglow"><feGaussianBlur stdDeviation="7"/></filter>
-    </defs>
-    <path d="M150 158 L118 70 L206 126 Z" fill="url(#sfur)" stroke="#5d544a" stroke-width="4"/>
-    <path d="M362 158 L394 70 L306 126 Z" fill="url(#sfur)" stroke="#5d544a" stroke-width="4"/>
-    <path d="M150 150 L136 96 L188 128 Z" fill="#3a302a"/>
-    <path d="M362 150 L376 96 L324 128 Z" fill="#3a302a"/>
-    <path d="M256 92 C166 92 128 150 138 232 C144 300 150 350 202 388 C224 406 240 414 256 416 C272 414 288 406 310 388 C362 350 368 300 374 232 C384 150 346 92 256 92 Z" fill="url(#sfur)" stroke="#5d544a" stroke-width="5"/>
-    <path d="M162 198 L252 236 L248 262 L168 232 Z" fill="#2b2520"/>
-    <path d="M350 198 L260 236 L264 262 L344 232 Z" fill="#2b2520"/>
-    <circle class="glow" cx="206" cy="256" r="22" fill="#ff3a14" filter="url(#sglow)" opacity="0.8"/>
-    <circle class="glow" cx="306" cy="256" r="22" fill="#ff3a14" filter="url(#sglow)" opacity="0.8"/>
-    <path d="M184 254 Q206 242 230 256 Q208 268 184 254 Z" fill="url(#seye)"/>
-    <path d="M328 254 Q306 242 282 256 Q304 268 328 254 Z" fill="url(#seye)"/>
-    <ellipse cx="207" cy="256" rx="5" ry="8" fill="#1a0f08"/><ellipse cx="305" cy="256" rx="5" ry="8" fill="#1a0f08"/>
-    <path d="M232 290 Q256 278 280 290" fill="none" stroke="#6b6058" stroke-width="5" stroke-linecap="round"/>
-    <path d="M240 304 Q256 295 272 304" fill="none" stroke="#6b6058" stroke-width="5" stroke-linecap="round"/>
-    <path d="M230 300 Q256 292 282 300 Q280 322 256 332 Q232 322 230 300 Z" fill="#14100c"/>
-    <path d="M200 344 Q256 330 312 344 Q308 398 256 412 Q204 398 200 344 Z" fill="#360c0b"/>
-    <path d="M206 346 Q256 336 306 346 L306 360 Q256 352 206 360 Z" fill="#7a2b2b"/>
-    <path d="M214 356 L222 392 L233 358 Z" fill="#fff"/><path d="M238 358 L244 378 L251 359 Z" fill="#f2efe8"/>
-    <path d="M298 356 L290 392 L279 358 Z" fill="#fff"/><path d="M274 358 L268 378 L261 359 Z" fill="#f2efe8"/>
-    <path d="M244 372 Q256 386 268 372 Q266 402 256 408 Q246 402 244 372 Z" fill="#d23a3a"/>
-    <path d="M236 402 L242 386 L249 402 Z" fill="#eceae3"/><path d="M276 402 L270 386 L263 402 Z" fill="#eceae3"/>
-    <path d="M300 372 q6 18 0 30 q-7 -6 -7 -16 q0 -8 7 -14 Z" fill="#bfe3ef" opacity="0.85"/>
-  </svg>
+  <div class="dogwrap"><img class="dog" src="splash.jpg" alt="Pitbull"><div class="rage"></div></div>
   <div class="ttl">PITBULLS</div>
   <div class="ldr"></div>
 </div>
