@@ -420,9 +420,14 @@ function weekBox(){
   const streakHtml=racha>0?'<span class="streak" title="'+racha+' semanas seguidas agendando la meta"><span class="num">'+racha+'</span></span>':'';
   // reparto por closer (de las NUEVAS agendadas esta semana)
   const cs=s.closer||{};
-  const CL=[['Benja Durán',17,'Durán'],['Vicente',2,'Vicente'],['Kai',2,'Kai']];
+  const CL=[['Benja Durán',21,'Durán'],['Vicente',2,'Vicente'],['Kai',2,'Kai']];
   const closerLine=CL.map(c=>{const got=cs[c[0]]||0,done=got>=c[1];
     return '<span class="clsr'+(done?' done':'')+'">'+esc(c[2])+' <b>'+got+'</b>/'+c[1]+(done?' ✓':'')+'</span>';}).join('');
+  // por país (internacional): México (+52) y Colombia (+57), por el código del teléfono del contacto
+  const ps=s.pais||{mexico:0,colombia:0};
+  const PA=[['mexico',6,'🇲🇽 México'],['colombia',6,'🇨🇴 Colombia']];
+  const paisLine=PA.map(p=>{const got=ps[p[0]]||0,done=got>=p[1];
+    return '<span class="clsr'+(done?' done':'')+'">'+esc(p[2])+' <b>'+got+'</b>/'+p[1]+(done?' ✓':'')+'</span>';}).join('');
   host.innerHTML=
     '<div class="weekhead"><span>🎯 Reuniones agendadas · esta semana</span>'+streakHtml+'</div>'+
     '<div class="weekbar"><i style="width:'+pct+'%;background:'+(ok?'var(--good)':'var(--accent)')+'"></i></div>'+
@@ -430,7 +435,8 @@ function weekBox(){
       (ok?'· ¡meta de la semana cumplida! 🎉':'· faltan '+(meta-n)+' para la meta')+
       (racha>0?(' &nbsp;·&nbsp; <b>'+racha+'</b> '+(racha===1?'semana':'semanas')+' seguidas'):' &nbsp;·&nbsp; arrancando la racha 💪')+
     '</div>'+
-    '<div class="closerrow"><span class="lbl">Agendadas esta semana · por closer</span>'+closerLine+'</div>';
+    '<div class="closerrow"><span class="lbl">Agendadas esta semana · por closer (Chile)</span>'+closerLine+'</div>'+
+    '<div class="closerrow"><span class="lbl">Internacional · por país (según teléfono del contacto)</span>'+paisLine+'</div>';
 }
 function inRange(m,f,t){return m.ymd&&m.ymd>=f&&m.ymd<=t;}
 function calcMetrics(ms){
