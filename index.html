@@ -450,7 +450,7 @@ function _semKey(ymd){const p=String(ymd||'').split('-');if(p.length<3)return St
 const _CLPRI={se_hizo:4,no_show:3,excluida:2,sin_marcar:1};
 function dedupReu(ms){const best={};ms.forEach(m=>{const k=m.sdr+'|'+(_tokC(m.contacto)||m.contacto)+'|'+_semKey(m.ymd);const c=best[k];if(!c||(_CLPRI[m.clasif]||0)>(_CLPRI[c.clasif]||0))best[k]=m;});return Object.values(best);}
 // "Creadas" = reuniones agendadas en el rango (por fecha de CREACIÓN, del calendario), deduped 1/contacto/semana
-function creadasDe(sdr,f,t){const cr=(BOOT.creadas||[]).filter(x=>x.sdr===sdr&&x.creado>=f&&x.creado<=t);const seen={};let n=0;cr.forEach(x=>{const k=(_tokC(x.contacto)||x.contacto)+'|'+_semKey(x.creado);if(!seen[k]){seen[k]=1;n++;}});return n;}
+function creadasDe(sdr,f,t){const cr=(BOOT.creadas||[]).filter(x=>x.sdr===sdr&&x.creado>=f&&x.creado<=t);const seen={};let chile=0,intl=0;cr.forEach(x=>{const k=(x.email||_tokC(x.contacto)||x.contacto)+'|'+_semKey(x.creado);if(seen[k])return;seen[k]=1;if(x.pais==='mexico'||x.pais==='colombia')intl++;else chile++;});return{chile:chile,intl:intl};}
 function calcMetrics(ms){
   let asistio=0,noShow=0,pagadas=0;
   ms.forEach(m=>{if(m.clasif==='se_hizo')asistio++;else if(m.clasif==='no_show')noShow++;if(m.pagada)pagadas++;});
@@ -488,7 +488,7 @@ function pintarInicio(){
       '<h2><span class="avatar" style="background:'+col+'">'+initials(s)+'</span>'+esc(s)+'<span class="caret">›</span></h2>'+
       '<div class="rings">'+ring(tasa,'Tasa de<br>agendamiento')+ring(m.showRate,'Show<br>rate')+'</div>'+
       '<div class="mini">'+
-        '<div class="wide">📅 Creadas (agendadas en el período)<b>'+creadas+'</b></div>'+
+        '<div class="wide">📅 Creadas · Chile<b>'+creadas.chile+'</b>'+(creadas.intl?'<div style="font-size:11px;font-weight:600;margin-top:2px">+ '+creadas.intl+' internacional</div>':'')+'</div>'+
         '<div>Reuniones<b>'+m.reu+'</b></div>'+
         '<div>Calificadas<b>'+m.pagadas+'</b></div>'+
         '<div>Llegaron<b>'+m.asistio+'</b></div>'+
@@ -502,8 +502,8 @@ function pintarInicio(){
     '<b>Show rate</b> = reuniones a las que la persona llegó ÷ reuniones que ya pasaron (se excluyen las reprogramadas). Cambia según las fechas que elijas arriba. '+
     '<b>Tasa de agendamiento</b> = de los contactos que <i>contestaron</i> el llamado, qué % se logró agendar. Es <b>acumulada</b> (las llamadas no tienen fecha en la base, no se filtran por día). '+
     '<b>Calificadas</b> = reuniones que llegaron y cuentan (positiva, completada, derivación, interés, oportunidad). '+
-    '<b>Creadas</b> = reuniones que el SDR <i>agendó</i> en el período (por fecha de creación en el calendario), no las que ocurren en el período. '+
-    'Las <b>reagendas no inflan</b>: una persona cuenta máximo 1 vez por semana (si la reagendás varias veces esa semana = 1; si la seguís trabajando otra semana = cuenta de nuevo). Esto aplica a Creadas, Reuniones y show rate. '+
+    '<b>Creadas · Chile</b> = reuniones que el SDR <i>agendó</i> en el período (por fecha de creación en el calendario), no las que ocurren en el período; lo <b>internacional</b> (México/Colombia, por código de teléfono) se muestra aparte abajo. '+
+    'Las <b>reagendas no inflan</b>: cada contacto (por su <i>email</i>) cuenta máximo 1 vez por semana (si lo reagendás varias veces esa semana = 1; si lo seguís trabajando otra semana = cuenta de nuevo). Esto aplica a Creadas, Reuniones y show rate. '+
     'Combina el <b>Excel</b> (planilla, manda en el resultado) con el <b>Makana Hub</b> (suma reuniones que no estén cargadas en el Excel + atribución automática), sin duplicar.';
 }
 function kpi(n,l,c){return '<div class="kpi"><div class="n" style="color:'+(c||'#1d1d1f')+'">'+n+'</div><div class="l">'+l+'</div></div>';}
