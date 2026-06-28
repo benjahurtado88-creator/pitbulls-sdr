@@ -2,7 +2,7 @@
    Estrategia: la "cáscara" (HTML, ícono, manifest) se cachea para abrir rápido y
    offline; las llamadas al backend de Apps Script NO se cachean (datos siempre frescos).
    Para forzar actualización de la cáscara, subir la versión del CACHE. */
-const CACHE = 'pitbulls-shell-v7';
+const CACHE = 'pitbulls-shell-v8';
 const SHELL = [
   './',
   './index.html',

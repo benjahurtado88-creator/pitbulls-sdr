@@ -488,7 +488,7 @@ function pintarInicio(){
       '<h2><span class="avatar" style="background:'+col+'">'+initials(s)+'</span>'+esc(s)+'<span class="caret">›</span></h2>'+
       '<div class="rings">'+ring(tasa,'Tasa de<br>agendamiento')+ring(m.showRate,'Show<br>rate')+'</div>'+
       '<div class="mini">'+
-        '<div class="wide">📅 Creadas · Chile<b>'+creadas.chile+'</b>'+(creadas.intl?'<div style="font-size:11px;font-weight:600;margin-top:2px">+ '+creadas.intl+' internacional</div>':'')+'</div>'+
+        '<div class="wide">📅 Creadas<b>'+(creadas.chile+creadas.intl)+'</b><div style="font-size:11px;font-weight:600;margin-top:2px">'+creadas.chile+' 🇨🇱 Chile'+(creadas.intl?' · '+creadas.intl+' 🌎 internacional':'')+'</div></div>'+
         '<div>Reuniones<b>'+m.reu+'</b></div>'+
         '<div>Calificadas<b>'+m.pagadas+'</b></div>'+
         '<div>Llegaron<b>'+m.asistio+'</b></div>'+
@@ -502,7 +502,7 @@ function pintarInicio(){
     '<b>Show rate</b> = reuniones a las que la persona llegó ÷ reuniones que ya pasaron (se excluyen las reprogramadas). Cambia según las fechas que elijas arriba. '+
     '<b>Tasa de agendamiento</b> = de los contactos que <i>contestaron</i> el llamado, qué % se logró agendar. Es <b>acumulada</b> (las llamadas no tienen fecha en la base, no se filtran por día). '+
     '<b>Calificadas</b> = reuniones que llegaron y cuentan (positiva, completada, derivación, interés, oportunidad). '+
-    '<b>Creadas · Chile</b> = reuniones que el SDR <i>agendó</i> en el período (por fecha de creación en el calendario), no las que ocurren en el período; lo <b>internacional</b> (México/Colombia, por código de teléfono) se muestra aparte abajo. '+
+    '<b>Creadas</b> = reuniones que el SDR <i>agendó</i> en el período (por fecha de <i>creación</i> en el calendario, no por cuándo ocurre la reunión: una agendada hoy para la otra semana cuenta hoy). El número grande es el <b>total</b>; debajo se separa <b>🇨🇱 Chile</b> de <b>🌎 internacional</b> (México/Colombia, por código de teléfono). '+
     'Las <b>reagendas no inflan</b>: cada contacto (por su <i>email</i>) cuenta máximo 1 vez por semana (si lo reagendás varias veces esa semana = 1; si lo seguís trabajando otra semana = cuenta de nuevo). Esto aplica a Creadas, Reuniones y show rate. '+
     'Combina el <b>Excel</b> (planilla, manda en el resultado) con el <b>Makana Hub</b> (suma reuniones que no estén cargadas en el Excel + atribución automática), sin duplicar.';
 }
