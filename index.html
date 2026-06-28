@@ -93,6 +93,8 @@
   .ring .lbl{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.15}
   .mini{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;font-size:12px}
   .mini div{background:var(--inset);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+  .mini .wide{grid-column:1 / -1;background:#eef6ff;border-color:#cfe3ff;color:#0a5bd3}
+  .mini .wide b{color:#0a5bd3}
   .mini b{display:block;font-size:16px;margin-top:2px}
   /* buttons */
   .btn{background:var(--accent);color:var(--onaccent);border:0;border-radius:12px;padding:14px 16px;font-weight:600;
@@ -428,6 +430,7 @@ function weekBox(){
   const PA=[['mexico',6,'🇲🇽 México'],['colombia',6,'🇨🇴 Colombia']];
   const paisLine=PA.map(p=>{const got=ps[p[0]]||0,done=got>=p[1];
     return '<span class="clsr'+(done?' done':'')+'">'+esc(p[2])+' <b>'+got+'</b>/'+p[1]+(done?' ✓':'')+'</span>';}).join('');
+  const chile=Object.keys(cs).reduce((a,k)=>a+(cs[k]||0),0), intl=(ps.mexico||0)+(ps.colombia||0);   // el total = Chile + internacional
   host.innerHTML=
     '<div class="weekhead"><span>🎯 Reuniones agendadas · esta semana</span>'+streakHtml+'</div>'+
     '<div class="weekbar"><i style="width:'+pct+'%;background:'+(ok?'var(--good)':'var(--accent)')+'"></i></div>'+
@@ -435,10 +438,19 @@ function weekBox(){
       (ok?'· ¡meta de la semana cumplida! 🎉':'· faltan '+(meta-n)+' para la meta')+
       (racha>0?(' &nbsp;·&nbsp; <b>'+racha+'</b> '+(racha===1?'semana':'semanas')+' seguidas'):' &nbsp;·&nbsp; arrancando la racha 💪')+
     '</div>'+
+    '<div class="weeksub" style="margin-top:3px">de las '+n+': <b>'+chile+'</b> Chile · <b>'+intl+'</b> internacional</div>'+
     '<div class="closerrow"><span class="lbl">Agendadas esta semana · por closer (Chile)</span>'+closerLine+'</div>'+
     '<div class="closerrow"><span class="lbl">Internacional · por país (según teléfono del contacto)</span>'+paisLine+'</div>';
 }
 function inRange(m,f,t){return m.ymd&&m.ymd>=f&&m.ymd<=t;}
+// --- Regla "1 por contacto por semana" (Benja): las reagendas dentro de una semana colapsan a 1;
+//     si vuelve a aparecer en otra semana, cuenta de nuevo (es seguimiento real). ---
+function _tokC(s){return String(s||'').normalize('NFKD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().split(' ').filter(Boolean).slice(0,2).join(' ');}
+function _semKey(ymd){const p=String(ymd||'').split('-');if(p.length<3)return String(ymd);const d=new Date(+p[0],+p[1]-1,+p[2]);const dow=(d.getDay()+6)%7;d.setDate(d.getDate()-dow);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+const _CLPRI={se_hizo:4,no_show:3,excluida:2,sin_marcar:1};
+function dedupReu(ms){const best={};ms.forEach(m=>{const k=m.sdr+'|'+(_tokC(m.contacto)||m.contacto)+'|'+_semKey(m.ymd);const c=best[k];if(!c||(_CLPRI[m.clasif]||0)>(_CLPRI[c.clasif]||0))best[k]=m;});return Object.values(best);}
+// "Creadas" = reuniones agendadas en el rango (por fecha de CREACIÓN, del calendario), deduped 1/contacto/semana
+function creadasDe(sdr,f,t){const cr=(BOOT.creadas||[]).filter(x=>x.sdr===sdr&&x.creado>=f&&x.creado<=t);const seen={};let n=0;cr.forEach(x=>{const k=(_tokC(x.contacto)||x.contacto)+'|'+_semKey(x.creado);if(!seen[k]){seen[k]=1;n++;}});return n;}
 function calcMetrics(ms){
   let asistio=0,noShow=0,pagadas=0;
   ms.forEach(m=>{if(m.clasif==='se_hizo')asistio++;else if(m.clasif==='no_show')noShow++;if(m.pagada)pagadas++;});
@@ -452,7 +464,7 @@ function pintarInicio(){
   setSub('En vivo · '+BOOT.actualizado+' · '+lbl);
   document.getElementById('eqttl').textContent='Equipo · '+lbl;
   const all=BOOT.meetings.filter(m=>SDRS.indexOf(m.sdr)>=0&&inRange(m,f,t));
-  const eq=calcMetrics(all);
+  const eq=calcMetrics(dedupReu(all));   // dedup reagendas (1/contacto/semana)
   let co=0,ag=0;SDRS.forEach(s=>{const a=(BOOT.agend&&BOOT.agend[s])||{};co+=a.contesto||0;ag+=a.agendo||0;});
   const tasaEq=co?Math.round(100*ag/co):null;
   document.getElementById('eqkpis').innerHTML=
@@ -464,9 +476,10 @@ function pintarInicio(){
   const cont=document.getElementById('cards');cont.innerHTML='';
   SDRS.forEach(s=>{
     const col=COLORS[s]||'#6ea8fe';
-    const ms=all.filter(x=>x.sdr===s).slice().sort((a,b)=>(a.ymd<b.ymd?-1:(a.ymd>b.ymd?1:0)));
+    const ms=dedupReu(all.filter(x=>x.sdr===s)).slice().sort((a,b)=>(a.ymd<b.ymd?-1:(a.ymd>b.ymd?1:0)));   // dedup reagendas
     const m=calcMetrics(ms);
     const tasa=agendDe(s);
+    const creadas=creadasDe(s,f,t);   // reuniones que agendó en el período (por fecha de creación)
     const det=ms.length
       ? ms.map(r=>'<div class="detrow"><div class="dc">'+esc(r.contacto)+'<small>'+(r.ymd?esc(fmtYmd(r.ymd)):'')+(r.negocio?' · '+esc(r.negocio):'')+'</small></div><div class="dl">'+esc(r.resultadoLabel||'⚪️ Sin resultado')+'</div></div>').join('')
       : '<div class="detrow" style="color:var(--muted)">Sin reuniones en este período.</div>';
@@ -475,6 +488,7 @@ function pintarInicio(){
       '<h2><span class="avatar" style="background:'+col+'">'+initials(s)+'</span>'+esc(s)+'<span class="caret">›</span></h2>'+
       '<div class="rings">'+ring(tasa,'Tasa de<br>agendamiento')+ring(m.showRate,'Show<br>rate')+'</div>'+
       '<div class="mini">'+
+        '<div class="wide">📅 Creadas (agendadas en el período)<b>'+creadas+'</b></div>'+
         '<div>Reuniones<b>'+m.reu+'</b></div>'+
         '<div>Calificadas<b>'+m.pagadas+'</b></div>'+
         '<div>Llegaron<b>'+m.asistio+'</b></div>'+
@@ -488,6 +502,8 @@ function pintarInicio(){
     '<b>Show rate</b> = reuniones a las que la persona llegó ÷ reuniones que ya pasaron (se excluyen las reprogramadas). Cambia según las fechas que elijas arriba. '+
     '<b>Tasa de agendamiento</b> = de los contactos que <i>contestaron</i> el llamado, qué % se logró agendar. Es <b>acumulada</b> (las llamadas no tienen fecha en la base, no se filtran por día). '+
     '<b>Calificadas</b> = reuniones que llegaron y cuentan (positiva, completada, derivación, interés, oportunidad). '+
+    '<b>Creadas</b> = reuniones que el SDR <i>agendó</i> en el período (por fecha de creación en el calendario), no las que ocurren en el período. '+
+    'Las <b>reagendas no inflan</b>: una persona cuenta máximo 1 vez por semana (si la reagendás varias veces esa semana = 1; si la seguís trabajando otra semana = cuenta de nuevo). Esto aplica a Creadas, Reuniones y show rate. '+
     'Combina el <b>Excel</b> (planilla, manda en el resultado) con el <b>Makana Hub</b> (suma reuniones que no estén cargadas en el Excel + atribución automática), sin duplicar.';
 }
 function kpi(n,l,c){return '<div class="kpi"><div class="n" style="color:'+(c||'#1d1d1f')+'">'+n+'</div><div class="l">'+l+'</div></div>';}
