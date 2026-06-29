@@ -395,8 +395,23 @@ function makeRange(hostId,state,onChange){
 let BOOT=null;
 let INI={from:'',to:''};
 function boot(force){
-  setSub(force?'Actualizando…':'Cargando…');
-  gs('getBootstrap',!!force).then(d=>{BOOT=d;onBoot();}).catch(e=>{showErr(e&&e.message||e);setSub('Error');});
+  // Stale-while-revalidate: si hay una carga guardada de antes y no es ↻, la pintamos YA
+  // (la app abre al instante), y refrescamos por detrás. El server cuando está "frío" tarda
+  // 7-45s; así el usuario no espera nunca, salvo la primerísima vez en el dispositivo.
+  let pintadoCache=false;
+  if(!force){
+    try{
+      const raw=localStorage.getItem('pitBoot');
+      if(raw){const cached=JSON.parse(raw);if(cached&&cached.meetings){BOOT=cached;onBoot();pintadoCache=true;}}
+    }catch(e){}
+  }
+  setSub(pintadoCache?'⟳ Actualizando…':(force?'Actualizando…':'Cargando…'));
+  gs('getBootstrap',!!force).then(d=>{
+    BOOT=d;
+    try{localStorage.setItem('pitBoot',JSON.stringify(d));}catch(e){}
+    if(pintadoCache) refrescarVistas();   // ya estaba pintado: repintar sin resetear el rango elegido
+    else onBoot();
+  }).catch(e=>{ if(!pintadoCache){showErr(e&&e.message||e);setSub('Error');} });
 }
 function onBoot(){
   showErr(BOOT.error);
@@ -408,6 +423,13 @@ function onBoot(){
   // Precalentar la agenda de hoy en segundo plano: deja la caché del server lista para
   // que Asistencia abra al instante (no pinta nada acá, solo entibia).
   gs('getAgendaDia',ymd(hoy())).catch(()=>{});
+}
+// Repinta las vistas con BOOT fresco SIN tocar el rango que el usuario ya eligió.
+function refrescarVistas(){
+  showErr(BOOT.error);
+  weekBox();
+  pintarInicio();
+  buildBuzonSdrs();
 }
 
 /* ---------------- INICIO ---------------- */
