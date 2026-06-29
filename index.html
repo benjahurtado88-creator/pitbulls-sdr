@@ -450,7 +450,23 @@ function _semKey(ymd){const p=String(ymd||'').split('-');if(p.length<3)return St
 const _CLPRI={se_hizo:4,no_show:3,excluida:2,sin_marcar:1};
 function dedupReu(ms){const best={};ms.forEach(m=>{const k=m.sdr+'|'+(_tokC(m.contacto)||m.contacto)+'|'+_semKey(m.ymd);const c=best[k];if(!c||(_CLPRI[m.clasif]||0)>(_CLPRI[c.clasif]||0))best[k]=m;});return Object.values(best);}
 // "Creadas" = reuniones agendadas en el rango (por fecha de CREACIÓN, del calendario), deduped 1/contacto/semana
-function creadasDe(sdr,f,t){const cr=(BOOT.creadas||[]).filter(x=>x.sdr===sdr&&x.creado>=f&&x.creado<=t);const seen={};let chile=0,intl=0;cr.forEach(x=>{const k=(x.email||_tokC(x.contacto)||x.contacto)+'|'+_semKey(x.creado);if(seen[k])return;seen[k]=1;if(x.pais==='mexico'||x.pais==='colombia')intl++;else chile++;});return{chile:chile,intl:intl};}
+function creadasDe(sdr,f,t){
+  const allCr=(BOOT.creadas||[]).filter(x=>x.sdr===sdr);
+  // primera vez (creación más antigua) por contacto en todo el historial cargado (~90 días)
+  const first={};
+  allCr.forEach(x=>{const id=(x.email||_tokC(x.contacto)||x.contacto);if(!first[id]||x.creado<first[id])first[id]=x.creado;});
+  const cr=allCr.filter(x=>x.creado>=f&&x.creado<=t);
+  const seen={};let chile=0,intl=0,nuevas=0,reag=0;
+  cr.forEach(x=>{
+    const id=(x.email||_tokC(x.contacto)||x.contacto);
+    const k=id+'|'+_semKey(x.creado);          // máx 1 por contacto por semana
+    if(seen[k])return;seen[k]=1;
+    // reagenda = ese contacto ya tenía una reunión creada en una semana ANTERIOR
+    if(first[id] < _semKey(x.creado)) reag++; else nuevas++;
+    if(x.pais==='mexico'||x.pais==='colombia')intl++;else chile++;
+  });
+  return{chile:chile,intl:intl,nuevas:nuevas,reag:reag,total:chile+intl};
+}
 function calcMetrics(ms){
   let asistio=0,noShow=0,pagadas=0;
   ms.forEach(m=>{if(m.clasif==='se_hizo')asistio++;else if(m.clasif==='no_show')noShow++;if(m.pagada)pagadas++;});
@@ -488,7 +504,10 @@ function pintarInicio(){
       '<h2><span class="avatar" style="background:'+col+'">'+initials(s)+'</span>'+esc(s)+'<span class="caret">›</span></h2>'+
       '<div class="rings">'+ring(tasa,'Tasa de<br>agendamiento')+ring(m.showRate,'Show<br>rate')+'</div>'+
       '<div class="mini">'+
-        '<div class="wide">📅 Creadas<b>'+(creadas.chile+creadas.intl)+'</b><div style="font-size:11px;font-weight:600;margin-top:2px">'+creadas.chile+' 🇨🇱 Chile'+(creadas.intl?' · '+creadas.intl+' 🌎 internacional':'')+'</div></div>'+
+        '<div class="wide">📅 Creadas<b>'+creadas.total+'</b>'+
+          '<div style="font-size:11px;font-weight:600;margin-top:2px">🆕 '+creadas.nuevas+' nuevas · 🔁 '+creadas.reag+' reagendas</div>'+
+          '<div style="font-size:11px;font-weight:600;margin-top:1px;color:var(--muted)">'+creadas.chile+' 🇨🇱 Chile'+(creadas.intl?' · '+creadas.intl+' 🌎 internacional':'')+'</div>'+
+        '</div>'+
         '<div>Reuniones<b>'+m.reu+'</b></div>'+
         '<div>Calificadas<b>'+m.pagadas+'</b></div>'+
         '<div>Llegaron<b>'+m.asistio+'</b></div>'+
@@ -502,8 +521,8 @@ function pintarInicio(){
     '<b>Show rate</b> = reuniones a las que la persona llegó ÷ reuniones que ya pasaron (se excluyen las reprogramadas). Cambia según las fechas que elijas arriba. '+
     '<b>Tasa de agendamiento</b> = de los contactos que <i>contestaron</i> el llamado, qué % se logró agendar. Es <b>acumulada</b> (las llamadas no tienen fecha en la base, no se filtran por día). '+
     '<b>Calificadas</b> = reuniones que llegaron y cuentan (positiva, completada, derivación, interés, oportunidad). '+
-    '<b>Creadas</b> = reuniones que el SDR <i>agendó</i> en el período (por fecha de <i>creación</i> en el calendario, no por cuándo ocurre la reunión: una agendada hoy para la otra semana cuenta hoy). El número grande es el <b>total</b>; debajo se separa <b>🇨🇱 Chile</b> de <b>🌎 internacional</b> (México/Colombia, por código de teléfono). '+
-    'Las <b>reagendas no inflan</b>: cada contacto (por su <i>email</i>) cuenta máximo 1 vez por semana (si lo reagendás varias veces esa semana = 1; si lo seguís trabajando otra semana = cuenta de nuevo). Esto aplica a Creadas, Reuniones y show rate. '+
+    '<b>Creadas</b> = reuniones que el SDR <i>agendó</i> en el período (por fecha de <i>creación</i> en el calendario, no por cuándo ocurre la reunión: una agendada hoy para la otra semana cuenta hoy). El número grande es el <b>total</b>. Debajo se separa en <b>🆕 nuevas</b> (contacto que nunca tuvo reunión = prospección) y <b>🔁 reagendas</b> (contacto que ya tenía una reunión en una semana anterior = seguimiento de un no-show). Y aparte, <b>🇨🇱 Chile</b> vs <b>🌎 internacional</b> (México/Colombia, por código de teléfono). '+
+    'Cada contacto (por su <i>email</i>) cuenta <b>máximo 1 vez por semana</b> (si lo reagendás varias veces esa semana = 1; si reaparece otra semana = cuenta de nuevo, como 🔁 reagenda). Esto aplica a Creadas, Reuniones y show rate. '+
     'Combina el <b>Excel</b> (planilla, manda en el resultado) con el <b>Makana Hub</b> (suma reuniones que no estén cargadas en el Excel + atribución automática), sin duplicar.';
 }
 function kpi(n,l,c){return '<div class="kpi"><div class="n" style="color:'+(c||'#1d1d1f')+'">'+n+'</div><div class="l">'+l+'</div></div>';}
