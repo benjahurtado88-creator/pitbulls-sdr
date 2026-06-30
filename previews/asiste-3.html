@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Opción 3 — Sello / Impacto</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #f2f2f7;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #1c1c1e;
+  }
+  .wrap { max-width: 375px; margin: 0 auto; padding: 16px 14px 60px; }
+  .pagehead { padding: 6px 4px 14px; }
+  .pagehead h1 { font-size: 20px; margin: 0 0 4px; font-weight: 700; }
+  .pagehead p { font-size: 13px; margin: 0; color: #8a8a8e; line-height: 1.4; }
+
+  .card {
+    position: relative;
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    overflow: hidden;
+    transition: background 0.35s ease, box-shadow 0.35s ease;
+  }
+  .card.celebrate {
+    background: linear-gradient(135deg, #e3f7e8 0%, #d2f1da 100%);
+    box-shadow: 0 5px 18px rgba(43,182,115,0.35);
+  }
+  .card.shake { animation: shake 0.45s cubic-bezier(.36,.07,.19,.97); }
+  @keyframes shake {
+    10%, 90% { transform: translateX(-2px); }
+    20%, 80% { transform: translateX(3px); }
+    30%, 50%, 70% { transform: translateX(-5px); }
+    40%, 60% { transform: translateX(5px); }
+  }
+
+  .name { font-size: 17px; font-weight: 600; margin: 0 0 3px; transition: color 0.4s; }
+  .meta { font-size: 13px; color: #8a8a8e; margin: 0 0 14px; transition: color 0.4s; }
+  .card.celebrate .name { color: #115c2d; }
+  .card.celebrate .meta { color: #2f7a4c; }
+
+  .call-btn {
+    display: block; width: 100%;
+    background: #e9f9ee; color: #1c7d3e;
+    border: 1px solid #2bb673; border-radius: 12px;
+    padding: 11px; font-size: 15px; font-weight: 600;
+    margin-bottom: 12px; cursor: pointer; transition: opacity 0.4s;
+  }
+  .card.celebrate .call-btn { opacity: 0.4; }
+
+  .states { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+  .state {
+    border: none; border-radius: 12px;
+    padding: 10px 4px; font-size: 12px; font-weight: 600;
+    cursor: pointer; line-height: 1.2;
+    transition: transform 0.15s, opacity 0.4s, box-shadow 0.4s;
+  }
+  .state:active { transform: scale(0.93); }
+  .s-yes { background: #e9f9ee; color: #1c7d3e; border: 1px solid #2bb673; }
+  .s-no  { background: #fdeaea; color: #e5484d; }
+  .s-nc  { background: #eef0f3; color: #555; }
+  .s-re  { background: #eef0f3; color: #555; }
+  .card.celebrate .state:not(.s-yes) { opacity: 0.3; }
+  .card.celebrate .s-yes {
+    background: #1c7d3e; color: #fff;
+    box-shadow: 0 2px 10px rgba(28,125,62,0.5);
+  }
+
+  /* el sello / timbre */
+  .stamp {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(2.6) rotate(-22deg);
+    opacity: 0; z-index: 30; pointer-events: none;
+    border: 3px solid #1c7d3e;
+    color: #1c7d3e;
+    background: rgba(255,255,255,0.78);
+    border-radius: 10px;
+    padding: 7px 14px;
+    font-size: 19px; font-weight: 800; letter-spacing: 1px;
+    white-space: nowrap;
+    box-shadow: 0 0 0 3px rgba(28,125,62,0.18);
+    text-transform: uppercase;
+  }
+  .stamp.go { animation: stampIn 0.55s cubic-bezier(.2,.9,.3,1.2) forwards; }
+  @keyframes stampIn {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(2.6) rotate(-22deg); }
+    55%  { opacity: 1; transform: translate(-50%, -50%) scale(0.88) rotate(-13deg); }
+    72%  { transform: translate(-50%, -50%) scale(1.06) rotate(-15deg); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(-14deg); }
+  }
+  /* halo de impacto al timbrar */
+  .ring {
+    position: absolute; top: 50%; left: 50%;
+    width: 40px; height: 40px; margin: -20px 0 0 -20px;
+    border: 3px solid rgba(28,125,62,0.5);
+    border-radius: 50%; opacity: 0; z-index: 28; pointer-events: none;
+  }
+  .ring.go { animation: ring 0.6s ease-out forwards; }
+  @keyframes ring {
+    0%   { opacity: 0.8; transform: scale(0.2); }
+    100% { opacity: 0; transform: scale(4.2); }
+  }
+
+  .reset {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #fff; border: 1px solid #d6d6db; color: #0a5bd3;
+    border-radius: 20px; padding: 7px 14px; font-size: 13px;
+    font-weight: 600; cursor: pointer; margin-top: 4px;
+  }
+  .reset:active { background: #f0f0f3; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="pagehead">
+    <h1>Opción 3 — Sello / Impacto</h1>
+    <p>La tarjeta se pone verde y un timbre "💵 FACTURANDO" cae de golpe con efecto stamp y shake. Cha-ching de dos tonos.</p>
+  </div>
+
+  <div class="card" id="card">
+    <div class="name">Rodrigo Vega</div>
+    <div class="meta">Falabella Retail · 16:45</div>
+    <button class="call-btn">📞 Llamar</button>
+    <div class="states">
+      <button class="state s-yes" id="yesBtn">Asiste</button>
+      <button class="state s-no">No asiste</button>
+      <button class="state s-nc">No contestó</button>
+      <button class="state s-re">Se reagendó</button>
+    </div>
+    <div class="ring" id="ring"></div>
+    <div class="stamp" id="stamp">💵 ¡Facturando!</div>
+  </div>
+
+  <button class="reset" id="reset">🔄 Probar de nuevo</button>
+</div>
+
+<script>
+(function(){
+  var card = document.getElementById('card');
+  var yesBtn = document.getElementById('yesBtn');
+  var stamp = document.getElementById('stamp');
+  var ring = document.getElementById('ring');
+  var reset = document.getElementById('reset');
+  var busy = false;
+
+  // ---- Cha-ching tipo registradora, dos tonos ----
+  function chaChing(){
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      var ctx = new AC();
+      if (ctx.state === 'suspended') { ctx.resume(); }
+      var now = ctx.currentTime;
+      var master = ctx.createGain();
+      master.gain.value = 0.42;
+      master.connect(ctx.destination);
+
+      // "cha" — golpe percusivo de la caja al abrir
+      var thunk = ctx.createOscillator(); var tg = ctx.createGain();
+      thunk.type = 'square';
+      thunk.frequency.setValueAtTime(160, now);
+      thunk.frequency.exponentialRampToValueAtTime(70, now + 0.08);
+      tg.gain.setValueAtTime(0.45, now);
+      tg.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+      thunk.connect(tg); tg.connect(master);
+      thunk.start(now); thunk.stop(now + 0.14);
+
+      // "ching" — dos tonos de campana que suenan juntos (acorde), tras el golpe
+      function tone(freq, t, dur, type, vol){
+        var o = ctx.createOscillator(); var g = ctx.createGain();
+        o.type = type || 'triangle';
+        o.frequency.setValueAtTime(freq, now + t);
+        g.gain.setValueAtTime(0.0001, now + t);
+        g.gain.exponentialRampToValueAtTime(vol || 0.5, now + t + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + t + dur);
+        o.connect(g); g.connect(master);
+        o.start(now + t); o.stop(now + t + dur + 0.02);
+      }
+      tone(784.0, 0.10, 0.45, 'triangle', 0.5);  // G5
+      tone(1046.5, 0.10, 0.50, 'sine', 0.42);     // C6 — segundo tono del acorde
+
+      setTimeout(function(){ try { ctx.close(); } catch(e){} }, 1300);
+    } catch(e) { /* silencioso */ }
+  }
+
+  function celebrate(){
+    if (busy) return;
+    busy = true;
+    card.classList.add('celebrate');
+    chaChing();
+
+    // halo de impacto + stamp + shake disparados juntos
+    ring.classList.remove('go'); void ring.offsetWidth; ring.classList.add('go');
+    stamp.classList.remove('go'); void stamp.offsetWidth; stamp.classList.add('go');
+    // shake leve cuando el sello "golpea" (a mitad de la animación)
+    setTimeout(function(){
+      card.classList.add('shake');
+      setTimeout(function(){ card.classList.remove('shake'); }, 460);
+    }, 240);
+  }
+
+  function doReset(){
+    busy = false;
+    card.classList.remove('celebrate', 'shake');
+    stamp.classList.remove('go');
+    ring.classList.remove('go');
+  }
+
+  yesBtn.addEventListener('click', celebrate);
+  reset.addEventListener('click', doReset);
+})();
+</script>
+</body>
+</html>

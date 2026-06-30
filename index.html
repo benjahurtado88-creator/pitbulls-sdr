@@ -169,6 +169,21 @@
   .addtel-row{display:flex;gap:6px}
   .addtel-row input{flex:1;font-size:16px;padding:11px}
   .btnmini{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:0 16px;font-weight:700;font-size:14px;cursor:pointer;flex:0 0 auto}
+  /* relojes por país (Asistencia) — para no llamar a México en mala hora */
+  .clocks{display:flex;gap:8px;margin:0 0 12px}
+  .clock{flex:1;background:#f2f2f7;border:1px solid #e3e3ea;border-radius:12px;padding:8px 4px;text-align:center}
+  .clock .cf{font-size:18px;line-height:1.1}
+  .clock .ct{font-size:18px;font-weight:800;letter-spacing:.5px;margin-top:1px;font-variant-numeric:tabular-nums}
+  .clock .cl{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  .clock.mx{background:#fff4ec;border-color:#ffd9bd}
+  /* aviso "cambiá al número mexicano" */
+  .mxsheet{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:24px}
+  .mxcard{background:#fff;border-radius:18px;max-width:340px;width:100%;padding:22px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+  .mxcard .mxbig{font-size:42px;line-height:1}
+  .mxcard h3{margin:10px 0 6px;font-size:19px;color:#c2410c}
+  .mxcard p{font-size:14px;color:#444;line-height:1.45;margin:0 0 16px}
+  .mxcard .mxgo{width:100%;background:var(--good);color:#fff;border:0;border-radius:12px;padding:14px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:6px}
+  .mxcard .mxcancel{width:100%;background:transparent;color:var(--muted);border:0;padding:8px;font-size:14px;cursor:pointer}
   .btnmini:active{transform:scale(.97)}
   /* barra "soy" (para registrar quién llama) */
   .yo{display:flex;align-items:center;gap:7px;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 11px;margin:0 0 10px;transition:background .2s}
@@ -219,6 +234,7 @@
   <section class="screen" id="s-asist">
     <div class="stepttl">📋 Confirmar asistencia</div>
     <div class="note" style="margin:0 0 12px">Marcá cómo viene cada reunión del día. Lo ven todos —Pitbulls, Kai, Vicente y Benja Durán— sin tener que escribir en el grupo. Si te equivocaste, tocá el mismo botón otra vez y se borra.</div>
+    <div class="clocks" id="clocks"></div>
     <div class="asist-day">
       <input type="date" id="asistDate">
       <button class="chip" onclick="asistSetHoy()">Hoy</button>
@@ -757,6 +773,7 @@ function asistInit(){
   const di=document.getElementById('asistDate');di.value=ASIST.dia;
   di.onchange=()=>{ASIST.dia=di.value||ymd(hoy());cargarAsist();};
   pintarYo();
+  updateClocks();if(!window._clockTimer){window._clockTimer=setInterval(updateClocks,1000);}   // relojes CL/CO/MX en vivo
 }
 function asistSetHoy(){ASIST.dia=ymd(hoy());document.getElementById('asistDate').value=ASIST.dia;cargarAsist();}
 function cargarAsist(auto){
@@ -789,14 +806,31 @@ function callcountHtml(r){
   if(!r.llamadas)return '<span style="color:var(--muted)">Todavía nadie lo llamó</span>';
   return '📞 Llamado <b>'+r.llamadas+'</b> '+(r.llamadas===1?'vez':'veces')+(r.llamadasDetalle?' · '+esc(r.llamadasDetalle):'');
 }
+// País del contacto por el código de teléfono (E.164): +52 México, +57 Colombia, resto Chile.
+const PAIS_FLAG={mx:'🇲🇽',co:'🇨🇴',cl:'🇨🇱'};
+function _paisTel(tel){const t=String(tel||'').replace(/[^\d]/g,'');if(t.indexOf('52')===0)return'mx';if(t.indexOf('57')===0)return'co';return'cl';}
+// Relojes CL/CO/MX en tiempo real (para no llamar a México en mala hora por el desfase).
+function updateClocks(){
+  const el=document.getElementById('clocks');if(!el)return;
+  const zonas=[['cl','🇨🇱','Chile','America/Santiago'],['co','🇨🇴','Colombia','America/Bogota'],['mx','🇲🇽','México','America/Mexico_City']];
+  el.innerHTML=zonas.map(function(z){
+    let t='--:--';try{t=new Intl.DateTimeFormat('es-CL',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:z[3]}).format(new Date());}catch(e){}
+    return '<div class="clock'+(z[0]==='mx'?' mx':'')+'"><div class="cf">'+z[1]+'</div><div class="ct">'+t+'</div><div class="cl">'+z[2]+'</div></div>';
+  }).join('');
+}
 // Pinta el botón verde "Llamar a X" si hay teléfono; si no, una casilla para que el SDR lo cargue.
 function renderCall(r,ca,div){
   ca.innerHTML='';
   if(r.telefono){
     const nombre=(r.contacto||'').split(' ')[0]||'el contacto';
+    const pais=_paisTel(r.telefono);
     const a=document.createElement('a');a.className='callbtn';a.href='tel:'+r.telefono;
-    a.innerHTML='📞 Llamar a '+esc(nombre);
-    a.onclick=()=>regLlamada(r,div);   // registra la llamada; el href dispara el marcador
+    a.innerHTML='📞 Llamar a '+esc(nombre)+' '+(PAIS_FLAG[pais]||'');
+    if(pais==='mx'){
+      a.onclick=function(ev){ev.preventDefault();avisoMX(r,div);};   // México: primero el recordatorio del número
+    }else{
+      a.onclick=function(){regLlamada(r,div);};   // CL/CO: marca directo (el href dispara), registra
+    }
     ca.appendChild(a);
     const cc=document.createElement('div');cc.className='callcount';cc.innerHTML=callcountHtml(r);ca.appendChild(cc);
   }else{
@@ -828,6 +862,21 @@ function regLlamada(r,div){
   gs('registrarLlamada',{key:r.key,ymd:r.ymd,contacto:r.contacto,sdr:r.sdr,quien:yo})
     .then(res=>{if(res&&res.veces){r.llamadas=res.veces;r.llamadasDetalle=res.detalle;if(cc)cc.innerHTML=callcountHtml(r);}})
     .catch(()=>{});
+}
+// México: antes de marcar, recordá cambiar al número mexicano (Twilio) para que el contacto conteste.
+function avisoMX(r,div){
+  const nombre=(r.contacto||'').split(' ')[0]||'el contacto';
+  const ov=document.createElement('div');ov.className='mxsheet';
+  ov.innerHTML='<div class="mxcard"><div class="mxbig">🇲🇽📞</div>'+
+    '<h3>Estás llamando a México</h3>'+
+    '<p>Antes de marcar, <b>cambiá a tu número mexicano</b> (Twilio) para que <b>'+esc(nombre)+'</b> vea un número de México y te conteste.</p>'+
+    '<button class="mxgo">Ya cambié · llamar ahora</button>'+
+    '<button class="mxcancel">Cancelar</button></div>';
+  document.body.appendChild(ov);
+  const close=function(){ov.remove();};
+  ov.querySelector('.mxgo').onclick=function(){regLlamada(r,div);close();window.location.href='tel:'+r.telefono;};
+  ov.querySelector('.mxcancel').onclick=close;
+  ov.onclick=function(e){if(e.target===ov)close();};
 }
 function pintarMarca(div,r){
   const m=div.querySelector('.amark');

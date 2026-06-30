@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Opción 2 — Elegante / Dorada</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #f2f2f7;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #1c1c1e;
+  }
+  .wrap { max-width: 375px; margin: 0 auto; padding: 16px 14px 60px; }
+  .pagehead { padding: 6px 4px 14px; }
+  .pagehead h1 { font-size: 20px; margin: 0 0 4px; font-weight: 700; }
+  .pagehead p { font-size: 13px; margin: 0; color: #8a8a8e; line-height: 1.4; }
+
+  .card {
+    position: relative;
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    overflow: hidden;
+    transition: background 0.7s ease, box-shadow 0.7s ease;
+  }
+  .card.celebrate {
+    background: linear-gradient(135deg, #fffaf0 0%, #fdf3da 100%);
+    box-shadow: 0 6px 22px rgba(201,162,39,0.30);
+    border: 1px solid #f0dca0;
+  }
+
+  /* shimmer dorado que barre la tarjeta */
+  .shimmer {
+    position: absolute; top: 0; bottom: 0; left: -60%;
+    width: 50%;
+    background: linear-gradient(100deg, transparent 0%, rgba(255,225,140,0.55) 45%, rgba(255,243,200,0.85) 50%, rgba(255,225,140,0.55) 55%, transparent 100%);
+    transform: skewX(-18deg);
+    pointer-events: none; z-index: 15; opacity: 0;
+  }
+  .card.celebrate .shimmer { animation: sweep 1.1s ease-out 0.05s; }
+  @keyframes sweep {
+    0%   { left: -60%; opacity: 0; }
+    15%  { opacity: 1; }
+    100% { left: 130%; opacity: 0; }
+  }
+
+  .name { font-size: 17px; font-weight: 600; margin: 0 0 3px; transition: color 0.5s; }
+  .meta { font-size: 13px; color: #8a8a8e; margin: 0 0 14px; transition: color 0.5s; }
+  .card.celebrate .name { color: #8a6d12; }
+  .card.celebrate .meta { color: #b08f3a; }
+
+  .call-btn {
+    display: block; width: 100%;
+    background: #e9f9ee; color: #1c7d3e;
+    border: 1px solid #2bb673; border-radius: 12px;
+    padding: 11px; font-size: 15px; font-weight: 600;
+    margin-bottom: 12px; cursor: pointer; transition: opacity 0.5s;
+  }
+  .card.celebrate .call-btn { opacity: 0.45; }
+
+  .states { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+  .state {
+    border: none; border-radius: 12px;
+    padding: 10px 4px; font-size: 12px; font-weight: 600;
+    cursor: pointer; line-height: 1.2;
+    transition: transform 0.15s, opacity 0.5s, background 0.5s, color 0.5s, box-shadow 0.5s;
+  }
+  .state:active { transform: scale(0.93); }
+  .s-yes { background: #e9f9ee; color: #1c7d3e; border: 1px solid #2bb673; }
+  .s-no  { background: #fdeaea; color: #e5484d; }
+  .s-nc  { background: #eef0f3; color: #555; }
+  .s-re  { background: #eef0f3; color: #555; }
+  .card.celebrate .state:not(.s-yes) { opacity: 0.35; }
+  .card.celebrate .s-yes {
+    background: linear-gradient(135deg, #f6d873, #d8b13e);
+    color: #4a3a08; border: 1px solid #c79f33;
+    box-shadow: 0 2px 10px rgba(201,162,39,0.45);
+  }
+
+  /* moneda que gira */
+  .coin {
+    position: absolute;
+    top: 14px; right: 14px;
+    font-size: 34px; z-index: 25; opacity: 0;
+    pointer-events: none;
+    transform-origin: center;
+  }
+  .card.celebrate .coin { animation: spincoin 1.2s cubic-bezier(.2,.7,.3,1) forwards; }
+  @keyframes spincoin {
+    0%   { opacity: 0; transform: translateY(8px) rotateY(0deg) scale(0.5); }
+    25%  { opacity: 1; transform: translateY(-4px) rotateY(540deg) scale(1.15); }
+    70%  { opacity: 1; transform: translateY(0) rotateY(1080deg) scale(1); }
+    100% { opacity: 0.85; transform: translateY(0) rotateY(1440deg) scale(1); }
+  }
+
+  /* contador "+$ facturado" que sube */
+  .counter {
+    position: absolute;
+    bottom: 14px; left: 16px;
+    font-size: 0; opacity: 0; z-index: 24; pointer-events: none;
+  }
+  .card.celebrate .counter { animation: fadeUp 0.5s ease 0.15s forwards; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .counter .lbl { font-size: 11px; color: #b08f3a; font-weight: 600; display:block; letter-spacing: .3px; }
+  .counter .val { font-size: 22px; font-weight: 800; color: #8a6d12; font-variant-numeric: tabular-nums; }
+
+  /* destellos sutiles */
+  .spark {
+    position: absolute; font-size: 14px; pointer-events: none; z-index: 22; opacity: 0;
+  }
+
+  .reset {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #fff; border: 1px solid #d6d6db; color: #0a5bd3;
+    border-radius: 20px; padding: 7px 14px; font-size: 13px;
+    font-weight: 600; cursor: pointer; margin-top: 4px;
+  }
+  .reset:active { background: #f0f0f3; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="pagehead">
+    <h1>Opción 2 — Elegante / Dorada</h1>
+    <p>Shimmer dorado sutil, una moneda que gira y un contador "+$ facturado" que sube. Premium y silenciosa.</p>
+  </div>
+
+  <div class="card" id="card">
+    <div class="shimmer"></div>
+    <div class="name">Camila Soto</div>
+    <div class="meta">Clínica Las Condes · 11:00</div>
+    <button class="call-btn">📞 Llamar</button>
+    <div class="states">
+      <button class="state s-yes" id="yesBtn">Asiste</button>
+      <button class="state s-no">No asiste</button>
+      <button class="state s-nc">No contestó</button>
+      <button class="state s-re">Se reagendó</button>
+    </div>
+    <div class="coin" id="coin">🪙</div>
+    <div class="counter" id="counter">
+      <span class="lbl">FACTURADO</span>
+      <span class="val" id="val">+$0</span>
+    </div>
+  </div>
+
+  <button class="reset" id="reset">🔄 Probar de nuevo</button>
+</div>
+
+<script>
+(function(){
+  var card = document.getElementById('card');
+  var yesBtn = document.getElementById('yesBtn');
+  var counter = document.getElementById('counter');
+  var val = document.getElementById('val');
+  var reset = document.getElementById('reset');
+  var busy = false;
+  var countTimer = null;
+
+  // ---- Cha-ching corto y brillante ----
+  function chaChing(){
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      var ctx = new AC();
+      if (ctx.state === 'suspended') { ctx.resume(); }
+      var now = ctx.currentTime;
+      var master = ctx.createGain();
+      master.gain.value = 0.32;
+      master.connect(ctx.destination);
+
+      // dos campanitas agudas y brillantes, muy cortas
+      function bell(freq, t){
+        var o = ctx.createOscillator();
+        var g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(freq, now + t);
+        g.gain.setValueAtTime(0.0001, now + t);
+        g.gain.exponentialRampToValueAtTime(0.5, now + t + 0.008);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.30);
+        o.connect(g); g.connect(master);
+        o.start(now + t); o.stop(now + t + 0.34);
+      }
+      bell(1318.5, 0.00);   // E6 brillante
+      bell(1760.0, 0.08);   // A6 más alto, remate
+      // chispa muy fina arriba
+      var s = ctx.createOscillator(); var sg = ctx.createGain();
+      s.type = 'sine';
+      s.frequency.setValueAtTime(2637, now + 0.02);
+      sg.gain.setValueAtTime(0.0001, now + 0.02);
+      sg.gain.exponentialRampToValueAtTime(0.18, now + 0.03);
+      sg.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+      s.connect(sg); sg.connect(master);
+      s.start(now + 0.02); s.stop(now + 0.18);
+
+      setTimeout(function(){ try { ctx.close(); } catch(e){} }, 900);
+    } catch(e) { /* silencioso */ }
+  }
+
+  function sparkles(){
+    var w = card.clientWidth, h = card.clientHeight;
+    for (var i = 0; i < 7; i++) {
+      (function(i){
+        var el = document.createElement('div');
+        el.className = 'spark';
+        el.textContent = '✨';
+        el.style.left = (20 + Math.random() * (w - 50)) + 'px';
+        el.style.top  = (16 + Math.random() * (h - 40)) + 'px';
+        el.style.fontSize = (10 + Math.random()*8) + 'px';
+        card.appendChild(el);
+        el.animate([
+          { opacity: 0, transform: 'scale(0.4)' },
+          { opacity: 1, transform: 'scale(1.1)', offset: 0.4 },
+          { opacity: 0, transform: 'scale(0.6)' }
+        ], { duration: 700 + Math.random()*400, delay: 120 + Math.random()*400, easing: 'ease-out', fill: 'forwards' });
+        setTimeout(function(){ if (el.parentNode) el.parentNode.removeChild(el); }, 1300);
+      })(i);
+    }
+  }
+
+  function runCounter(){
+    var target = 45000; // facturación de la reunión, ej.
+    var start = performance.now();
+    var dur = 900;
+    function fmt(n){ return '+$' + Math.round(n).toLocaleString('es-CL'); }
+    function step(t){
+      var p = Math.min(1, (t - start) / dur);
+      var eased = 1 - Math.pow(1 - p, 3);
+      val.textContent = fmt(target * eased);
+      if (p < 1) countTimer = requestAnimationFrame(step);
+    }
+    countTimer = requestAnimationFrame(step);
+  }
+
+  function celebrate(){
+    if (busy) return;
+    busy = true;
+    card.classList.add('celebrate');
+    chaChing();
+    sparkles();
+    runCounter();
+  }
+
+  function doReset(){
+    busy = false;
+    if (countTimer) cancelAnimationFrame(countTimer);
+    card.classList.remove('celebrate');
+    val.textContent = '+$0';
+    var sp = card.querySelectorAll('.spark');
+    for (var i = 0; i < sp.length; i++) sp[i].parentNode.removeChild(sp[i]);
+  }
+
+  yesBtn.addEventListener('click', celebrate);
+  reset.addEventListener('click', doReset);
+})();
+</script>
+</body>
+</html>

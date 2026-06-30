@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Opción 1 — Explosiva</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #f2f2f7;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #1c1c1e;
+  }
+  .wrap { max-width: 375px; margin: 0 auto; padding: 16px 14px 60px; }
+  .pagehead { padding: 6px 4px 14px; }
+  .pagehead h1 { font-size: 20px; margin: 0 0 4px; font-weight: 700; }
+  .pagehead p { font-size: 13px; margin: 0; color: #8a8a8e; line-height: 1.4; }
+
+  .card {
+    position: relative;
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    overflow: hidden;
+    transition: background 0.5s ease, box-shadow 0.5s ease, transform 0.25s ease;
+  }
+  .card.celebrate {
+    background: linear-gradient(135deg, #1aa84a 0%, #16b85a 60%, #0d9c45 100%);
+    box-shadow: 0 8px 24px rgba(22,168,74,0.45);
+    animation: cardPulse 0.6s ease;
+  }
+  @keyframes cardPulse {
+    0% { transform: scale(1); }
+    25% { transform: scale(1.04); }
+    60% { transform: scale(0.99); }
+    100% { transform: scale(1); }
+  }
+  .card.celebrate .name,
+  .card.celebrate .meta { color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.25); }
+
+  .name { font-size: 17px; font-weight: 600; margin: 0 0 3px; transition: color 0.4s; }
+  .meta { font-size: 13px; color: #8a8a8e; margin: 0 0 14px; transition: color 0.4s; }
+
+  .call-btn {
+    display: block; width: 100%;
+    background: #e9f9ee; color: #1c7d3e;
+    border: 1px solid #2bb673; border-radius: 12px;
+    padding: 11px; font-size: 15px; font-weight: 600;
+    margin-bottom: 12px; cursor: pointer;
+    transition: opacity 0.4s;
+  }
+  .card.celebrate .call-btn { opacity: 0.35; }
+
+  .states { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+  .state {
+    border: none; border-radius: 12px;
+    padding: 10px 4px; font-size: 12px; font-weight: 600;
+    cursor: pointer; line-height: 1.2;
+    transition: transform 0.15s, opacity 0.4s;
+  }
+  .state:active { transform: scale(0.93); }
+  .s-yes { background: #e9f9ee; color: #1c7d3e; border: 1px solid #2bb673; }
+  .s-no  { background: #fdeaea; color: #e5484d; }
+  .s-nc  { background: #eef0f3; color: #555; }
+  .s-re  { background: #eef0f3; color: #555; }
+  .card.celebrate .state:not(.s-yes) { opacity: 0.3; }
+  .card.celebrate .s-yes {
+    background: rgba(255,255,255,0.95); color: #0d9c45;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  }
+
+  /* +1 💰 grande que salta */
+  .bigwin {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.2);
+    font-size: 40px; font-weight: 800; color: #fff;
+    text-shadow: 0 3px 14px rgba(0,0,0,0.4);
+    opacity: 0; pointer-events: none; z-index: 30;
+    white-space: nowrap;
+  }
+  .bigwin.go { animation: bigwin 1.1s cubic-bezier(.17,.89,.32,1.28) forwards; }
+  @keyframes bigwin {
+    0%   { opacity: 0; transform: translate(-50%, 10px) scale(0.2); }
+    20%  { opacity: 1; transform: translate(-50%, -10px) scale(1.25); }
+    55%  { opacity: 1; transform: translate(-50%, -14px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -48px) scale(0.95); }
+  }
+
+  /* billetes y monedas que caen */
+  .money {
+    position: absolute; top: -40px;
+    font-size: 26px; pointer-events: none; z-index: 20;
+    will-change: transform, opacity;
+  }
+
+  .reset {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #fff; border: 1px solid #d6d6db; color: #0a5bd3;
+    border-radius: 20px; padding: 7px 14px; font-size: 13px;
+    font-weight: 600; cursor: pointer; margin-top: 4px;
+  }
+  .reset:active { background: #f0f0f3; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="pagehead">
+    <h1>Opción 1 — Explosiva</h1>
+    <p>Lluvia de billetes y monedas, verde intenso, "+1 💰" que salta y cha-ching grave y fuerte.</p>
+  </div>
+
+  <div class="card" id="card">
+    <div class="name">Juan Pérez</div>
+    <div class="meta">Banco Falabella · 15:30</div>
+    <button class="call-btn">📞 Llamar</button>
+    <div class="states">
+      <button class="state s-yes" id="yesBtn">Asiste</button>
+      <button class="state s-no">No asiste</button>
+      <button class="state s-nc">No contestó</button>
+      <button class="state s-re">Se reagendó</button>
+    </div>
+    <div class="bigwin" id="bigwin">+1 💰</div>
+  </div>
+
+  <button class="reset" id="reset">🔄 Probar de nuevo</button>
+</div>
+
+<script>
+(function(){
+  var card = document.getElementById('card');
+  var yesBtn = document.getElementById('yesBtn');
+  var bigwin = document.getElementById('bigwin');
+  var reset = document.getElementById('reset');
+  var busy = false;
+
+  // ---- Cha-ching grave y fuerte (WebAudio) ----
+  function chaChing(){
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      var ctx = new AC();
+      if (ctx.state === 'suspended') { ctx.resume(); }
+      var now = ctx.currentTime;
+      var master = ctx.createGain();
+      master.gain.value = 0.5;
+      master.connect(ctx.destination);
+
+      // dos "dings" descendentes-ascendentes tipo registradora, tono grave
+      function ding(freq, t, dur){
+        var o = ctx.createOscillator();
+        var o2 = ctx.createOscillator();
+        var g = ctx.createGain();
+        o.type = 'triangle'; o2.type = 'square';
+        o.frequency.setValueAtTime(freq, now + t);
+        o2.frequency.setValueAtTime(freq * 2.01, now + t);
+        g.gain.setValueAtTime(0.0001, now + t);
+        g.gain.exponentialRampToValueAtTime(0.6, now + t + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + t + dur);
+        o.connect(g); o2.connect(g); g.connect(master);
+        o.start(now + t); o2.start(now + t);
+        o.stop(now + t + dur + 0.02); o2.stop(now + t + dur + 0.02);
+      }
+      ding(523.25, 0.00, 0.32);   // primer golpe
+      ding(659.25, 0.10, 0.42);   // segundo, sostenido
+      // "kerchunk" grave de la caja
+      var n = ctx.createOscillator(); var ng = ctx.createGain();
+      n.type = 'sawtooth';
+      n.frequency.setValueAtTime(90, now);
+      n.frequency.exponentialRampToValueAtTime(45, now + 0.18);
+      ng.gain.setValueAtTime(0.4, now);
+      ng.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+      n.connect(ng); ng.connect(master);
+      n.start(now); n.stop(now + 0.24);
+
+      setTimeout(function(){ try { ctx.close(); } catch(e){} }, 1600);
+    } catch(e) { /* sonido falla silenciosamente */ }
+  }
+
+  // ---- Lluvia de billetes/monedas ----
+  var EMOJIS = ['💵','💸','🪙','💰','💵','🪙'];
+  function rain(){
+    var w = card.clientWidth;
+    var count = 26;
+    for (var i = 0; i < count; i++) {
+      (function(i){
+        var el = document.createElement('div');
+        el.className = 'money';
+        el.textContent = EMOJIS[i % EMOJIS.length];
+        var startX = Math.random() * (w - 26);
+        el.style.left = startX + 'px';
+        el.style.fontSize = (20 + Math.random()*16) + 'px';
+        card.appendChild(el);
+        var fall = card.clientHeight + 60;
+        var drift = (Math.random() * 60 - 30);
+        var rot = (Math.random() * 720 - 360);
+        var dur = 900 + Math.random() * 600;
+        var delay = Math.random() * 350;
+        el.animate([
+          { transform: 'translate(0, -40px) rotate(0deg)', opacity: 0 },
+          { transform: 'translate(0, -10px) rotate(0deg)', opacity: 1, offset: 0.08 },
+          { transform: 'translate(' + drift + 'px, ' + fall + 'px) rotate(' + rot + 'deg)', opacity: 0.9 }
+        ], { duration: dur, delay: delay, easing: 'cubic-bezier(.3,.1,.6,1)', fill: 'forwards' });
+        setTimeout(function(){ if (el.parentNode) el.parentNode.removeChild(el); }, dur + delay + 100);
+      })(i);
+    }
+  }
+
+  function celebrate(){
+    if (busy) return;
+    busy = true;
+    card.classList.add('celebrate');
+    chaChing();
+    rain();
+    bigwin.classList.remove('go');
+    void bigwin.offsetWidth;
+    bigwin.classList.add('go');
+  }
+
+  function doReset(){
+    busy = false;
+    card.classList.remove('celebrate');
+    bigwin.classList.remove('go');
+    var ms = card.querySelectorAll('.money');
+    for (var i = 0; i < ms.length; i++) ms[i].parentNode.removeChild(ms[i]);
+  }
+
+  yesBtn.addEventListener('click', celebrate);
+  reset.addEventListener('click', doReset);
+})();
+</script>
+</body>
+</html>
