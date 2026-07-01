@@ -45,6 +45,11 @@
   .card.open .caret{transform:rotate(90deg)}
   .card .det{display:none;margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
   .card.open .det{display:block}
+  /* KPIs (Creadas + Reuniones/Calificadas/…) escondidos hasta tocar la tarjeta (acordeón) */
+  .card .mini{display:none}
+  .card.open .mini{display:grid}
+  .card .peek{text-align:center;color:var(--muted);font-size:12px;margin-top:10px}
+  .card.open .peek{display:none}
   .detttl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:6px}
   .detrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
   .detrow:last-child{border-bottom:0}
@@ -552,6 +557,7 @@ function pintarInicio(){
     div.innerHTML=
       '<h2><span class="avatar" style="background:'+col+'">'+initials(s)+'</span>'+esc(s)+'<span class="caret">›</span></h2>'+
       '<div class="rings">'+ring(tasa,'Tasa de<br>agendamiento')+ring(m.showRate,'Show<br>rate')+'</div>'+
+      '<div class="peek">📊 Toca para ver métricas y reuniones ›</div>'+
       '<div class="mini">'+
         '<div class="wide">📅 Creadas<b>'+creadas.total+'</b>'+
           '<div style="font-size:11px;font-weight:600;margin-top:2px">🆕 '+creadas.nuevas+' nuevas · 🔁 '+creadas.reag+' reagendas</div>'+
