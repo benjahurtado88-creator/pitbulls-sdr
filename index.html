@@ -991,7 +991,12 @@ boot();
 /* Service worker: cachea la cáscara para que abra rápido y aguante señal mala.
    Los datos del backend NUNCA se cachean (ver sw.js) → siempre frescos. */
 if('serviceWorker' in navigator){
-  window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+  // Cuando una versión nueva del SW toma el control, recargamos 1 vez para mostrar la app al día.
+  var _swReloaded=false;
+  navigator.serviceWorker.addEventListener('controllerchange',function(){ if(_swReloaded)return; _swReloaded=true; window.location.reload(); });
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js').then(function(reg){ try{reg.update();}catch(e){} }).catch(function(){});
+  });
 }
 </script>
 </body>
