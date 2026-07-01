@@ -40,16 +40,20 @@
   .card{background:var(--card);border:1px solid var(--line);
     border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
   .card h2{margin:0 0 12px;font-size:16px;display:flex;align-items:center;gap:8px;font-weight:700}
-  .card.clk{cursor:pointer}
-  .card .caret{margin-left:auto;color:var(--muted);font-size:20px;transition:transform .2s}
-  .card.open .caret{transform:rotate(90deg)}
   .card .det{display:none;margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
-  .card.open .det{display:block}
-  /* KPIs (Creadas + Reuniones/Calificadas/…) escondidos hasta tocar la tarjeta (acordeón) */
-  .card .mini{display:none}
-  .card.open .mini{display:grid}
-  .card .peek{text-align:center;color:var(--muted);font-size:12px;margin-top:10px}
-  .card.open .peek{display:none}
+  .card .det.show{display:block}
+  /* KPIs y resultados escondidos hasta tocar SU botón (dos acordeones separados) */
+  .card .mini{display:none;margin-top:10px}
+  .card .mini.show{display:grid}
+  .toggles{display:flex;gap:8px;margin-top:12px}
+  .tgl{flex:1;background:var(--inset);border:1px solid var(--line);border-radius:10px;padding:11px 8px;font-size:13px;font-weight:600;color:var(--txt);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}
+  .tgl .ar{color:var(--muted);transition:transform .2s;font-size:15px}
+  .tgl.on{background:#eef6ff;border-color:#cfe3ff;color:#0a5bd3}
+  .tgl.on .ar{transform:rotate(90deg);color:#0a5bd3}
+  /* glosario colapsable */
+  .gloss{width:100%;margin:0}
+  .glosstext{display:none;margin-top:10px}
+  .glosstext.show{display:block}
   .detttl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:6px}
   .detrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
   .detrow:last-child{border-bottom:0}
@@ -488,11 +492,7 @@ function weekBox(){
   host.innerHTML=
     '<div class="weekhead"><span>🎯 Reuniones agendadas · esta semana</span>'+streakHtml+'</div>'+
     '<div class="weekbar"><i style="width:'+pct+'%;background:'+(ok?'var(--good)':'var(--accent)')+'"></i></div>'+
-    '<div class="weeksub"><b style="color:'+(ok?'var(--good)':'var(--txt)')+';font-size:14px">'+n+'</b> de '+meta+' agendadas '+
-      (ok?'· ¡meta de la semana cumplida! 🎉':'· faltan '+(meta-n)+' para la meta')+
-      (racha>0?(' &nbsp;·&nbsp; <b>'+racha+'</b> '+(racha===1?'semana':'semanas')+' seguidas'):' &nbsp;·&nbsp; arrancando la racha 💪')+
-    '</div>'+
-    '<div class="weeksub" style="margin-top:3px">de las '+n+': <b>'+chile+'</b> Chile · <b>'+intl+'</b> internacional</div>'+
+    '<div class="weeksub"><b style="color:'+(ok?'var(--good)':'var(--txt)')+';font-size:14px">'+n+'</b> de '+meta+' agendadas'+(ok?' · ¡meta cumplida! 🎉':'')+'</div>'+
     '<div class="closerrow"><span class="lbl">Agendadas esta semana · por closer (Chile)</span>'+closerLine+'</div>'+
     '<div class="closerrow"><span class="lbl">Internacional · por país (según teléfono del contacto)</span>'+paisLine+'</div>';
 }
@@ -553,11 +553,14 @@ function pintarInicio(){
     const det=ms.length
       ? ms.map(r=>'<div class="detrow"><div class="dc">'+esc(r.contacto)+'<small>'+(r.ymd?esc(fmtYmd(r.ymd)):'')+(r.negocio?' · '+esc(r.negocio):'')+'</small></div><div class="dl">'+esc(r.resultadoLabel||'⚪️ Sin resultado')+'</div></div>').join('')
       : '<div class="detrow" style="color:var(--muted)">Sin reuniones en este período.</div>';
-    const div=document.createElement('div');div.className='card clk';
+    const div=document.createElement('div');div.className='card';
     div.innerHTML=
-      '<h2><span class="avatar" style="background:'+col+'">'+initials(s)+'</span>'+esc(s)+'<span class="caret">›</span></h2>'+
+      '<h2><span class="avatar" style="background:'+col+'">'+initials(s)+'</span>'+esc(s)+'</h2>'+
       '<div class="rings">'+ring(tasa,'Tasa de<br>agendamiento')+ring(m.showRate,'Show<br>rate')+'</div>'+
-      '<div class="peek">📊 Toca para ver métricas y reuniones ›</div>'+
+      '<div class="toggles">'+
+        '<button class="tgl" data-t="mini">📊 Métricas <span class="ar">›</span></button>'+
+        '<button class="tgl" data-t="det">📋 Resultados ('+m.reu+') <span class="ar">›</span></button>'+
+      '</div>'+
       '<div class="mini">'+
         '<div class="wide">📅 Creadas<b>'+creadas.total+'</b>'+
           '<div style="font-size:11px;font-weight:600;margin-top:2px">🆕 '+creadas.nuevas+' nuevas · 🔁 '+creadas.reag+' reagendas</div>'+
@@ -569,16 +572,23 @@ function pintarInicio(){
         '<div>No llegaron<b>'+m.noShow+'</b></div>'+
       '</div>'+
       '<div class="det"><div class="detttl">Las '+m.reu+' reuniones del período</div>'+det+'</div>';
-    div.onclick=()=>div.classList.toggle('open');
+    div.querySelectorAll('.tgl').forEach(function(btn){
+      btn.onclick=function(ev){ev.stopPropagation();const el=div.querySelector('.'+btn.dataset.t);if(!el)return;const on=el.classList.toggle('show');btn.classList.toggle('on',on);};
+    });
     cont.appendChild(div);
   });
   document.getElementById('dataNote').innerHTML=
+    '<button class="tgl gloss" id="glossBtn">ⓘ Cómo se calculan estos números <span class="ar">›</span></button>'+
+    '<div class="glosstext" id="glossText">'+
     '<b>Show rate</b> = reuniones a las que la persona llegó ÷ reuniones que ya pasaron (se excluyen las reprogramadas). Cambia según las fechas que elijas arriba. '+
     '<b>Tasa de agendamiento</b> = de los contactos que <i>contestaron</i> el llamado, qué % se logró agendar. Es <b>acumulada</b> (las llamadas no tienen fecha en la base, no se filtran por día). '+
     '<b>Calificadas</b> = reuniones que llegaron y cuentan (positiva, completada, derivación, interés, oportunidad). '+
     '<b>Creadas</b> = reuniones que el SDR <i>agendó</i> en el período (por fecha de <i>creación</i> en el calendario, no por cuándo ocurre la reunión: una agendada hoy para la otra semana cuenta hoy). El número grande es el <b>total</b>. Debajo se separa en <b>🆕 nuevas</b> (contacto que nunca tuvo reunión = prospección) y <b>🔁 reagendas</b> (contacto que ya tenía una reunión en una semana anterior = seguimiento de un no-show). Y aparte, <b>🇨🇱 Chile</b> vs <b>🌎 internacional</b> (México/Colombia, por código de teléfono). '+
     'Cada contacto (por su <i>email</i>) cuenta <b>máximo 1 vez por semana</b> (si lo reagendás varias veces esa semana = 1; si reaparece otra semana = cuenta de nuevo, como 🔁 reagenda). Esto aplica a Creadas, Reuniones y show rate. '+
-    'Combina el <b>Excel</b> (planilla, manda en el resultado) con el <b>Makana Hub</b> (suma reuniones que no estén cargadas en el Excel + atribución automática), sin duplicar.';
+    'Combina el <b>Excel</b> (planilla, manda en el resultado) con el <b>Makana Hub</b> (suma reuniones que no estén cargadas en el Excel + atribución automática), sin duplicar.'+
+    '</div>';
+  var gb=document.getElementById('glossBtn');
+  if(gb)gb.onclick=function(){var t=document.getElementById('glossText');var on=t.classList.toggle('show');gb.classList.toggle('on',on);};
 }
 function kpi(n,l,c){return '<div class="kpi"><div class="n" style="color:'+(c||'#1d1d1f')+'">'+n+'</div><div class="l">'+l+'</div></div>';}
 function ring(p,lbl){return '<div class="ring" style="--p:'+(p||0)+';--c:'+ringColor(p)+'"><div class="center"><div class="val">'+(p===null?'—':p+'%')+'</div><div class="lbl">'+lbl+'</div></div></div>';}
