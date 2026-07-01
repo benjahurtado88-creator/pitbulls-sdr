@@ -1,0 +1,31 @@
+name: keep-warm
+
+# Mantiene "caliente" el backend (Apps Script) para que los Pitbulls no paguen el
+# recálculo lento (9-22s). Cada ~10 min visita la app y fuerza que recalcule y deje
+# la caché lista. GitHub puede atrasar el cron unos minutos: para keep-warm alcanza.
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'   # cada 10 minutos (hora UTC)
+  workflow_dispatch: {}        # permite dispararlo a mano para probar
+
+# Si se solapan corridas, que la nueva no cancele a la anterior (son pings cortos).
+concurrency:
+  group: keep-warm
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Calentar getBootstrap (recalcula + refresca la caché)
+        run: |
+          URL="https://script.google.com/macros/s/AKfycbxlVrAU6wGBTam-PynDZ9gAi7xhi4SxYpwh9gJ3B62rqUH0dKr37YwuhoUFFqOs55uE/exec"
+          curl -sS -L -m 90 "${URL}?action=getBootstrap&args=%5Btrue%5D" -o /dev/null \
+            -w "getBootstrap: HTTP %{http_code} en %{time_total}s\n"
+      - name: Calentar getAgendaDia (Asistencia · hoy en Chile)
+        run: |
+          URL="https://script.google.com/macros/s/AKfycbxlVrAU6wGBTam-PynDZ9gAi7xhi4SxYpwh9gJ3B62rqUH0dKr37YwuhoUFFqOs55uE/exec"
+          HOY=$(TZ=America/Santiago date +%F)
+          curl -sS -L -m 90 "${URL}?action=getAgendaDia&args=%5B%22${HOY}%22%5D" -o /dev/null \
+            -w "getAgendaDia ${HOY}: HTTP %{http_code} en %{time_total}s\n"
