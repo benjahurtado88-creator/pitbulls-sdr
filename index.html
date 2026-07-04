@@ -342,9 +342,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 <script>
-const SDRS=['Rodrigo','Ambrosio','José Tomás'];
+const SDRS=['Rodrigo','Ambrosio','José Tomás','Batarce'];
 const CLOSERS=['Kai','Vicente','Benja Durán'];   // los closers, por nombre (antes decía "Closers")
-const COLORS={'Rodrigo':'#007aff','Ambrosio':'#ff9500','José Tomás':'#34c759'};
+const COLORS={'Rodrigo':'#007aff','Ambrosio':'#ff9500','José Tomás':'#34c759','Batarce':'#af52de'};
 const CATS=['No tenía tiempo','Le pareció caro','No le quedó claro','Se arrepintió','No contesta','Mala calificación','Otro'];
 const MESAB=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 
@@ -475,7 +475,7 @@ function weekBox(){
   const host=document.getElementById('weekBox');if(!host||!BOOT)return;
   const s=BOOT.semana||{total:0,sdr:{},closer:{}};
   const n=s.total||0;                       // reuniones NUEVAS agendadas esta semana (del calendario)
-  const meta=BOOT.metaSemanal||21,racha=BOOT.racha||0;
+  const meta=BOOT.metaSemanal||28,racha=BOOT.racha||0;
   const pct=Math.min(100,Math.round(100*n/meta)),ok=n>=meta;
   const streakHtml=racha>0?'<span class="streak" title="'+racha+' semanas seguidas agendando la meta"><span class="num">'+racha+'</span></span>':'';
   // reparto por closer (de las NUEVAS agendadas esta semana)
