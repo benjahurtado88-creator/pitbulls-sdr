@@ -523,24 +523,26 @@ function creadasDe(sdr,f,t){
   });
   return{chile:chile,intl:intl,nuevas:nuevas,reag:reag,total:chile+intl};
 }
-// País de una reunión ya OCURRIDA (BOOT.meetings no trae país) → se infiere del mismo
-// contacto en BOOT.creadas, que ya resolvió país por teléfono. Default Chile.
-function _paisReuMap(){
-  const m={};
+// Agendadas del período POR PAÍS — se cuenta por la fecha de AGENDAMIENTO (creado), NO por
+// la fecha de la reunión. Mismo dato y misma regla que las tarjetas "Creadas"
+// (dedup: máx 1 por contacto por semana). Así, una reu mexicana agendada el mes pasado
+// cuenta el mes pasado, aunque la reunión ocurra recién este mes o más adelante.
+function creadasPaisEquipo(f,t){
+  let chile=0,mexico=0,colombia=0;const seen={};
   (BOOT.creadas||[]).forEach(x=>{
-    const p=(x.pais==='mexico'||x.pais==='colombia')?x.pais:'chile';
-    const kt=x.sdr+'|'+(_tokC(x.contacto)||x.contacto);
-    if(!m[kt]||m[kt]==='chile')m[kt]=p;                                   // si alguna vez fue internacional, manda internacional
-    if(x.email){const ke=x.sdr+'|'+String(x.email).toLowerCase();if(!m[ke]||m[ke]==='chile')m[ke]=p;}
+    if(SDRS.indexOf(x.sdr)<0||x.creado<f||x.creado>t)return;
+    const id=(x.email||_tokC(x.contacto)||x.contacto);
+    const k=x.sdr+'|'+id+'|'+_semKey(x.creado);   // máx 1 por contacto por semana (igual que Creadas)
+    if(seen[k])return;seen[k]=1;
+    if(x.pais==='mexico')mexico++;else if(x.pais==='colombia')colombia++;else chile++;
   });
-  return m;
+  return {chile,mexico,colombia};
 }
 function calcMetrics(ms){
-  let asistio=0,noShow=0,pagadas=0,chile=0,mexico=0,colombia=0;
-  ms.forEach(m=>{if(m.clasif==='se_hizo')asistio++;else if(m.clasif==='no_show')noShow++;if(m.pagada)pagadas++;
-    if(m.pais==='mexico')mexico++;else if(m.pais==='colombia')colombia++;else chile++;});
+  let asistio=0,noShow=0,pagadas=0;
+  ms.forEach(m=>{if(m.clasif==='se_hizo')asistio++;else if(m.clasif==='no_show')noShow++;if(m.pagada)pagadas++;});
   const tot=asistio+noShow;
-  return {asistio,noShow,pagadas,reu:ms.length,chile,mexico,colombia,intl:mexico+colombia,showRate:tot?Math.round(100*asistio/tot):null};
+  return {asistio,noShow,pagadas,reu:ms.length,showRate:tot?Math.round(100*asistio/tot):null};
 }
 function agendDe(sdr){const a=(BOOT.agend&&BOOT.agend[sdr])||{contesto:0,agendo:0};return a.contesto?Math.round(100*a.agendo/a.contesto):null;}
 function pintarInicio(){
@@ -549,8 +551,6 @@ function pintarInicio(){
   setSub('En vivo · '+BOOT.actualizado+' · '+lbl);
   document.getElementById('eqttl').textContent='Equipo · '+lbl;
   const all=BOOT.meetings.filter(m=>SDRS.indexOf(m.sdr)>=0&&inRange(m,f,t));
-  const pmap=_paisReuMap();
-  all.forEach(m=>{m.pais=pmap[m.sdr+'|'+(_tokC(m.contacto)||m.contacto)]||'chile';});   // etiqueta país (Chile/intl) por reunión
   const eq=calcMetrics(dedupReu(all));   // dedup reagendas (1/contacto/semana)
   let co=0,ag=0;SDRS.forEach(s=>{const a=(BOOT.agend&&BOOT.agend[s])||{};co+=a.contesto||0;ag+=a.agendo||0;});
   const tasaEq=co?Math.round(100*ag/co):null;
@@ -559,11 +559,12 @@ function pintarInicio(){
     kpi(tasaEq===null?'—':tasaEq+'%','Tasa de agendamiento (acumulada)',ringColor(tasaEq))+
     kpi(eq.reu,'Reuniones (en el período)','#1d1d1f')+
     kpi(eq.pagadas,'Reuniones calificadas','#34d399');
-  // Reuniones del período · por país — mismo estilo de chips que la barra de arriba,
-  // pero de las reuniones del RANGO filtrado (no solo de esta semana).
-  const PAB=[['🇨🇱 Chile',eq.chile],['🇲🇽 México',eq.mexico],['🇨🇴 Colombia',eq.colombia]];
+  // Agendadas del período · por país — por fecha de AGENDAMIENTO (como las Creadas), filtrable
+  // por rango. Mismo estilo de chips que la barra semanal de arriba.
+  const cp=creadasPaisEquipo(f,t);
+  const PAB=[['🇨🇱 Chile',cp.chile],['🇲🇽 México',cp.mexico],['🇨🇴 Colombia',cp.colombia]];
   document.getElementById('eqPais').innerHTML=
-    '<div class="closerrow"><span class="lbl">Reuniones del período · por país (según teléfono del contacto)</span>'+
+    '<div class="closerrow"><span class="lbl">Agendadas en el período · por país (por cuándo se agendó)</span>'+
     PAB.map(p=>'<span class="clsr">'+p[0]+' <b>'+p[1]+'</b></span>').join('')+'</div>';
 
   const cont=document.getElementById('cards');cont.innerHTML='';
