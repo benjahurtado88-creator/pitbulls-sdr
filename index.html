@@ -76,6 +76,7 @@
   .kpi{background:var(--inset);border:1px solid var(--line);border-radius:13px;padding:12px;min-width:0}
   .kpi .n{font-size:26px;font-weight:700;line-height:1}
   .kpi .l{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.25}
+  .kpi .ksub{font-size:11px;font-weight:600;color:var(--muted);margin-top:4px;line-height:1.2}
   /* barra semanal + racha de fueguitos */
   .weekbox{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
   .weekhead{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;font-weight:700}
@@ -521,11 +522,24 @@ function creadasDe(sdr,f,t){
   });
   return{chile:chile,intl:intl,nuevas:nuevas,reag:reag,total:chile+intl};
 }
+// País de una reunión ya OCURRIDA (BOOT.meetings no trae país) → se infiere del mismo
+// contacto en BOOT.creadas, que ya resolvió país por teléfono. Default Chile.
+function _paisReuMap(){
+  const m={};
+  (BOOT.creadas||[]).forEach(x=>{
+    const p=(x.pais==='mexico'||x.pais==='colombia')?x.pais:'chile';
+    const kt=x.sdr+'|'+(_tokC(x.contacto)||x.contacto);
+    if(!m[kt]||m[kt]==='chile')m[kt]=p;                                   // si alguna vez fue internacional, manda internacional
+    if(x.email){const ke=x.sdr+'|'+String(x.email).toLowerCase();if(!m[ke]||m[ke]==='chile')m[ke]=p;}
+  });
+  return m;
+}
 function calcMetrics(ms){
-  let asistio=0,noShow=0,pagadas=0;
-  ms.forEach(m=>{if(m.clasif==='se_hizo')asistio++;else if(m.clasif==='no_show')noShow++;if(m.pagada)pagadas++;});
+  let asistio=0,noShow=0,pagadas=0,chile=0,intl=0;
+  ms.forEach(m=>{if(m.clasif==='se_hizo')asistio++;else if(m.clasif==='no_show')noShow++;if(m.pagada)pagadas++;
+    if(m.pais==='mexico'||m.pais==='colombia')intl++;else chile++;});
   const tot=asistio+noShow;
-  return {asistio,noShow,pagadas,reu:ms.length,showRate:tot?Math.round(100*asistio/tot):null};
+  return {asistio,noShow,pagadas,reu:ms.length,chile,intl,showRate:tot?Math.round(100*asistio/tot):null};
 }
 function agendDe(sdr){const a=(BOOT.agend&&BOOT.agend[sdr])||{contesto:0,agendo:0};return a.contesto?Math.round(100*a.agendo/a.contesto):null;}
 function pintarInicio(){
@@ -534,13 +548,15 @@ function pintarInicio(){
   setSub('En vivo · '+BOOT.actualizado+' · '+lbl);
   document.getElementById('eqttl').textContent='Equipo · '+lbl;
   const all=BOOT.meetings.filter(m=>SDRS.indexOf(m.sdr)>=0&&inRange(m,f,t));
+  const pmap=_paisReuMap();
+  all.forEach(m=>{m.pais=pmap[m.sdr+'|'+(_tokC(m.contacto)||m.contacto)]||'chile';});   // etiqueta país (Chile/intl) por reunión
   const eq=calcMetrics(dedupReu(all));   // dedup reagendas (1/contacto/semana)
   let co=0,ag=0;SDRS.forEach(s=>{const a=(BOOT.agend&&BOOT.agend[s])||{};co+=a.contesto||0;ag+=a.agendo||0;});
   const tasaEq=co?Math.round(100*ag/co):null;
   document.getElementById('eqkpis').innerHTML=
     kpi(eq.showRate===null?'—':eq.showRate+'%','Show rate del equipo',ringColor(eq.showRate))+
     kpi(tasaEq===null?'—':tasaEq+'%','Tasa de agendamiento (acumulada)',ringColor(tasaEq))+
-    kpi(eq.reu,'Reuniones (en el período)','#1d1d1f')+
+    kpi(eq.reu,'Reuniones (en el período)','#1d1d1f',eq.chile+' 🇨🇱 Chile'+(eq.intl?' · '+eq.intl+' 🌎 internacional':''))+
     kpi(eq.pagadas,'Reuniones calificadas','#34d399');
 
   const cont=document.getElementById('cards');cont.innerHTML='';
@@ -590,7 +606,7 @@ function pintarInicio(){
   var gb=document.getElementById('glossBtn');
   if(gb)gb.onclick=function(){var t=document.getElementById('glossText');var on=t.classList.toggle('show');gb.classList.toggle('on',on);};
 }
-function kpi(n,l,c){return '<div class="kpi"><div class="n" style="color:'+(c||'#1d1d1f')+'">'+n+'</div><div class="l">'+l+'</div></div>';}
+function kpi(n,l,c,sub){return '<div class="kpi"><div class="n" style="color:'+(c||'#1d1d1f')+'">'+n+'</div><div class="l">'+l+'</div>'+(sub?'<div class="ksub">'+sub+'</div>':'')+'</div>';}
 function ring(p,lbl){return '<div class="ring" style="--p:'+(p||0)+';--c:'+ringColor(p)+'"><div class="center"><div class="val">'+(p===null?'—':p+'%')+'</div><div class="lbl">'+lbl+'</div></div></div>';}
 
 /* ---------------- BUZÓN ---------------- */
