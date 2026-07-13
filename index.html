@@ -541,8 +541,8 @@ function creadasPaisEquipo(f,t){
 function calcMetrics(ms){
   let asistio=0,noShow=0,pagadas=0;
   ms.forEach(m=>{if(m.clasif==='se_hizo')asistio++;else if(m.clasif==='no_show')noShow++;if(m.pagada)pagadas++;});
-  const tot=asistio+noShow;
-  return {asistio,noShow,pagadas,reu:ms.length,showRate:tot?Math.round(100*asistio/tot):null};
+  const total=ms.length;   // show rate = llegaron / TOTAL de reuniones del período (regla de Benja)
+  return {asistio,noShow,pagadas,reu:total,showRate:total?Math.round(100*asistio/total):null};
 }
 function agendDe(sdr){const a=(BOOT.agend&&BOOT.agend[sdr])||{contesto:0,agendo:0};return a.contesto?Math.round(100*a.agendo/a.contesto):null;}
 function pintarInicio(){
