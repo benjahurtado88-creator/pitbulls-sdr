@@ -345,7 +345,7 @@
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 <script>
 const SDRS=['Rodrigo','Ambrosio','José Tomás','Batarce'];
-const CLOSERS=['Kai','Vicente','Benja Durán'];   // los closers, por nombre (antes decía "Closers")
+const CLOSERS=['Kai','Vicente','Benja Durán','Máximo'];   // los closers, por nombre (antes decía "Closers")
 const COLORS={'Rodrigo':'#007aff','Ambrosio':'#ff9500','José Tomás':'#34c759','Batarce':'#af52de'};
 const CATS=['No tenía tiempo','Le pareció caro','No le quedó claro','Se arrepintió','No contesta','Mala calificación','Otro'];
 const MESAB=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -808,12 +808,25 @@ const AESTADOS=[['asiste','✅','Asiste'],['no_asiste','❌','No asiste'],['no_c
 let ASIST={dia:'',who:'',timer:null,saving:false,lastTouch:0,_init:false},LOAD_ASIST=false;
 const YOS=SDRS.concat(CLOSERS);   // quién marca: los 3 SDR + Kai, Vicente, Benja Durán
 function yoActual(){try{return localStorage.getItem('pitYo')||'';}catch(e){return '';}}
-function setYo(v){try{localStorage.setItem('pitYo',v);}catch(e){}pintarYo();}
+function _normJs(s){return String(s||'').normalize('NFKD').replace(/[̀-ͯ]/g,'').toLowerCase();}
+// ¿esta reunión corresponde a quien está elegido en "Soy:"? SDR → filtra por su columna;
+// closer → filtra por el dueño de la reunión (los labels difieren: 'Benja Durán'→"Durán", 'Kai'→"kai").
+function reuDeYo(r){
+  const yo=yoActual();if(!yo)return true;                 // nadie elegido → mostrar todo
+  if(SDRS.indexOf(yo)>=0)return r.sdr===yo;               // SDR → sus reuniones
+  const d=_normJs(r.dueno),y=_normJs(yo);
+  const tok=y.indexOf('duran')>=0?'duran':y.indexOf('vicente')>=0?'vicente':y.indexOf('kai')>=0?'kai':y.indexOf('maxim')>=0?'maxim':y;
+  return !!d&&d.indexOf(tok)>=0;                          // closer → reuniones cuyo dueño es esa persona
+}
+function setYo(v){const nv=(yoActual()===v)?'':v;try{localStorage.setItem('pitYo',nv);}catch(e){}pintarYo();if(ASIST.data)pintarAsist();}
 function pintarYo(){
   const host=document.getElementById('asistYo');if(!host)return;const yo=yoActual();
   host.innerHTML='<span class="lbl">📞 Soy:</span>';
   YOS.forEach(v=>{const b=document.createElement('button');b.className='ychip'+(yo===v?' on':'');b.textContent=v;b.onclick=()=>setYo(v);host.appendChild(b);});
-  if(!yo){const s=document.createElement('span');s.className='lbl';s.style.color='var(--bad)';s.textContent='(elegí para registrar tus llamadas · esto solo se te pide una vez)';host.appendChild(s);}
+  const s=document.createElement('span');s.className='lbl';
+  if(!yo){s.style.color='var(--bad)';s.textContent='(elegí tu nombre · filtra tus reuniones y registra tus llamadas)';}
+  else{s.textContent='Mostrando solo lo de '+yo+' · tocá '+yo+' de nuevo para ver todo';}
+  host.appendChild(s);
 }
 function flashYo(){const h=document.getElementById('asistYo');if(!h)return;h.style.background='#fff0ef';setTimeout(()=>h.style.background='',800);window.scrollTo(0,0);}
 function nowHHMM(){const d=new Date();return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
@@ -830,13 +843,16 @@ function asistSetHoy(){ASIST.dia=ymd(hoy());document.getElementById('asistDate')
 function cargarAsist(auto){
   if(auto&&(ASIST.saving||Date.now()-ASIST.lastTouch<10000))return; // no pisar al usuario mientras marca
   document.getElementById('asistCur').textContent='📅 '+rangeLabel(ASIST.dia,ASIST.dia);
-  gs('getAgendaDia',ASIST.dia).then(d=>{LOAD_ASIST=true;pintarAsist(d);}).catch(e=>showErr(e&&e.message||e));
+  gs('getAgendaDia',ASIST.dia).then(d=>{LOAD_ASIST=true;ASIST.data=d;pintarAsist();}).catch(e=>showErr(e&&e.message||e));
 }
 function pintarAsist(d){
+  d=d||ASIST.data;if(!d)return;
   document.getElementById('asistInfo').textContent='Actualizado '+d.actualizado+' · se refresca solo cada 25s';
   const c=document.getElementById('asistList');c.innerHTML='';
   if(!d.reuniones.length){c.innerHTML='<div class="skel">No hay reuniones para '+esc(rangeLabel(d.dia,d.dia))+'.<br>Aparecen acá apenas estén en el CRM o en el volcado del calendario.</div>';return;}
-  d.reuniones.forEach(r=>{
+  const reus=d.reuniones.filter(reuDeYo);   // filtro por "Soy:" (SDR o closer)
+  if(!reus.length){c.innerHTML='<div class="skel">No hay reuniones de <b>'+esc(yoActual())+'</b> para '+esc(rangeLabel(d.dia,d.dia))+'.<br>Tocá tu nombre arriba de nuevo para ver todas.</div>';return;}
+  reus.forEach(r=>{
     const div=document.createElement('div');div.className='acard'+(r.estado?' est-'+r.estado:'');
     const src=(r.fuentesList||[]).map(f=>'<span class="src">'+(f==='crm'?'CRM':(f==='cal'?'calendario':'agenda'))+'</span>').join('');
     const who=r.sdr?'<span class="src" style="border-color:'+(COLORS[r.sdr]||'#6ea8fe')+';color:'+(COLORS[r.sdr]||'#6ea8fe')+'">'+esc(r.sdr)+'</span>':'';
