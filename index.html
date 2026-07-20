@@ -544,7 +544,10 @@ function calcMetrics(ms){
   const total=ms.length;   // show rate = llegaron / TOTAL de reuniones del período (regla de Benja)
   return {asistio,noShow,pagadas,reu:total,showRate:total?Math.round(100*asistio/total):null};
 }
-function agendDe(sdr){const a=(BOOT.agend&&BOOT.agend[sdr])||{contesto:0,agendo:0};return a.contesto?Math.round(100*a.agendo/a.contesto):null;}
+// Llamadas conectadas (Hub) del SDR en el rango. BOOT.conectadas = {sdr:{ymd:n}}.
+function conectadasDe(sdr,f,t){const m=(BOOT.conectadas&&BOOT.conectadas[sdr])||{};let n=0;for(const d in m){if(d>=f&&d<=t)n+=m[d];}return n;}
+// Tasa de agendamiento = reuniones creadas (calendario) ÷ llamadas conectadas (Hub), en el rango.
+function agendDe(sdr,f,t){const cre=creadasDe(sdr,f,t).total;const con=conectadasDe(sdr,f,t);return con?Math.round(100*cre/con):null;}
 function pintarInicio(){
   if(!BOOT)return;
   const f=INI.from,t=INI.to,lbl=rangeLabel(f,t);
@@ -552,11 +555,11 @@ function pintarInicio(){
   document.getElementById('eqttl').textContent='Equipo · '+lbl;
   const all=BOOT.meetings.filter(m=>SDRS.indexOf(m.sdr)>=0&&inRange(m,f,t));
   const eq=calcMetrics(dedupReu(all));   // dedup reagendas (1/contacto/semana)
-  let co=0,ag=0;SDRS.forEach(s=>{const a=(BOOT.agend&&BOOT.agend[s])||{};co+=a.contesto||0;ag+=a.agendo||0;});
-  const tasaEq=co?Math.round(100*ag/co):null;
+  let creTot=0,conTot=0;SDRS.forEach(s=>{creTot+=creadasDe(s,f,t).total;conTot+=conectadasDe(s,f,t);});
+  const tasaEq=conTot?Math.round(100*creTot/conTot):null;
   document.getElementById('eqkpis').innerHTML=
     kpi(eq.showRate===null?'—':eq.showRate+'%','Show rate del equipo',ringColor(eq.showRate))+
-    kpi(tasaEq===null?'—':tasaEq+'%','Tasa de agendamiento (acumulada)',ringColor(tasaEq))+
+    kpi(tasaEq===null?'—':tasaEq+'%','Tasa de agendamiento',ringColor(tasaEq))+
     kpi(eq.reu,'Reuniones (en el período)','#1d1d1f')+
     kpi(eq.pagadas,'Reuniones calificadas','#34d399');
   // Agendadas del período · por país — por fecha de AGENDAMIENTO (como las Creadas), filtrable
@@ -572,7 +575,7 @@ function pintarInicio(){
     const col=COLORS[s]||'#6ea8fe';
     const ms=dedupReu(all.filter(x=>x.sdr===s)).slice().sort((a,b)=>(a.ymd<b.ymd?-1:(a.ymd>b.ymd?1:0)));   // dedup reagendas
     const m=calcMetrics(ms);
-    const tasa=agendDe(s);
+    const tasa=agendDe(s,f,t);
     const creadas=creadasDe(s,f,t);   // reuniones que agendó en el período (por fecha de creación)
     const det=ms.length
       ? ms.map(r=>'<div class="detrow"><div class="dc">'+esc(r.contacto)+'<small>'+(r.ymd?esc(fmtYmd(r.ymd)):'')+(r.negocio?' · '+esc(r.negocio):'')+'</small></div><div class="dl">'+esc(r.resultadoLabel||'⚪️ Sin resultado')+'</div></div>').join('')
