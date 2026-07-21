@@ -440,7 +440,9 @@ function boot(force){
   if(!force){
     try{
       const raw=localStorage.getItem('pitBoot');
-      if(raw){const cached=JSON.parse(raw);if(cached&&cached.meetings){BOOT=cached;onBoot();pintadoCache=true;}}
+      // exigimos `conectadas` en el caché: un BOOT viejo (previo a la tasa desde el Hub) NO se
+      // pinta stale (mostraría la tasa en "—"); así fuerza una carga fresca y se auto-corrige.
+      if(raw){const cached=JSON.parse(raw);if(cached&&cached.meetings&&cached.conectadas){BOOT=cached;onBoot();pintadoCache=true;}}
     }catch(e){}
   }
   setSub(pintadoCache?'⟳ Actualizando…':(force?'Actualizando…':'Cargando…'));
