@@ -507,7 +507,11 @@ function inRange(m,f,t){return m.ymd&&m.ymd>=f&&m.ymd<=t;}
 function _tokC(s){return String(s||'').normalize('NFKD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().split(' ').filter(Boolean).slice(0,2).join(' ');}
 function _semKey(ymd){const p=String(ymd||'').split('-');if(p.length<3)return String(ymd);const d=new Date(+p[0],+p[1]-1,+p[2]);const dow=(d.getDay()+6)%7;d.setDate(d.getDate()-dow);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 const _CLPRI={se_hizo:4,no_show:3,excluida:2,sin_marcar:1};
-function dedupReu(ms){const best={};ms.forEach(m=>{const k=m.sdr+'|'+(_tokC(m.contacto)||m.contacto)+'|'+_semKey(m.ymd);const c=best[k];if(!c||(_CLPRI[m.clasif]||0)>(_CLPRI[c.clasif]||0))best[k]=m;});return Object.values(best);}
+// Dedup "semana completa": para cada contacto-semana TOCADA por el rango, elige el mejor resultado
+// mirando TODAS las reuniones de esa semana (aunque alguna caiga apenas fuera del rango). Así una
+// reunión pagada el 30-jun y un no-show el 1-jul (misma semana, distinto mes) cuenta como PAGADA,
+// y filtrando "julio" no se pierde la pagada mostrando solo el no-show.
+function dedupReu(inr,full){full=full||inr;const touched={};inr.forEach(m=>{touched[m.sdr+'|'+(_tokC(m.contacto)||m.contacto)+'|'+_semKey(m.ymd)]=1;});const best={};full.forEach(m=>{const k=m.sdr+'|'+(_tokC(m.contacto)||m.contacto)+'|'+_semKey(m.ymd);if(!touched[k])return;const c=best[k];if(!c||(_CLPRI[m.clasif]||0)>(_CLPRI[c.clasif]||0))best[k]=m;});return Object.values(best);}
 // "Creadas" = reuniones agendadas en el rango (por fecha de CREACIÓN, del calendario), deduped 1/contacto/semana
 function creadasDe(sdr,f,t){
   const allCr=(BOOT.creadas||[]).filter(x=>x.sdr===sdr);
@@ -557,7 +561,8 @@ function pintarInicio(){
   setSub('En vivo · '+BOOT.actualizado+' · '+lbl);
   document.getElementById('eqttl').textContent='Equipo · '+lbl;
   const all=BOOT.meetings.filter(m=>SDRS.indexOf(m.sdr)>=0&&inRange(m,f,t));
-  const eq=calcMetrics(dedupReu(all));   // dedup reagendas (1/contacto/semana)
+  const fullAll=BOOT.meetings.filter(m=>SDRS.indexOf(m.sdr)>=0);   // todas (sin filtrar rango) para dedup "semana completa"
+  const eq=calcMetrics(dedupReu(all,fullAll));   // dedup reagendas (1/contacto/semana, mejor resultado de la semana entera)
   let creTot=0,conTot=0;SDRS.forEach(s=>{creTot+=creadasDe(s,f,t).total;conTot+=conectadasDe(s,f,t);});
   const tasaEq=conTot?Math.round(100*creTot/conTot):null;
   document.getElementById('eqkpis').innerHTML=
@@ -576,7 +581,7 @@ function pintarInicio(){
   const cont=document.getElementById('cards');cont.innerHTML='';
   SDRS.forEach(s=>{
     const col=COLORS[s]||'#6ea8fe';
-    const ms=dedupReu(all.filter(x=>x.sdr===s)).slice().sort((a,b)=>(a.ymd<b.ymd?-1:(a.ymd>b.ymd?1:0)));   // dedup reagendas
+    const ms=dedupReu(all.filter(x=>x.sdr===s),fullAll.filter(x=>x.sdr===s)).slice().sort((a,b)=>(a.ymd<b.ymd?-1:(a.ymd>b.ymd?1:0)));   // dedup reagendas (semana completa)
     const m=calcMetrics(ms);
     const tasa=agendDe(s,f,t);
     const creadas=creadasDe(s,f,t);   // reuniones que agendó en el período (por fecha de creación)
