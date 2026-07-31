@@ -825,9 +825,12 @@ function _normJs(s){return String(s||'').normalize('NFKD').replace(/[̀-ͯ]/g,''
 function reuDeYo(r){
   const yo=yoActual();if(!yo)return true;                 // nadie elegido → mostrar todo
   if(SDRS.indexOf(yo)>=0)return r.sdr===yo;               // SDR → sus reuniones
-  const d=_normJs(r.dueno),y=_normJs(yo);
+  const y=_normJs(yo);
   const tok=y.indexOf('duran')>=0?'duran':y.indexOf('vicente')>=0?'vicente':y.indexOf('kai')>=0?'kai':y.indexOf('maxim')>=0?'maxim':y;
-  return !!d&&d.indexOf(tok)>=0;                          // closer → reuniones cuyo dueño es esa persona
+  // closer → toda reunión donde ESA persona asiste. Una reunión puede tener varios closers
+  // (ej. Vicente organiza y Máximo co-cierra) → matcheamos contra la lista completa r.duenos.
+  const lista=(r.duenos&&r.duenos.length)?r.duenos:[r.dueno||''];
+  return lista.some(d=>{const dn=_normJs(d);return !!dn&&dn.indexOf(tok)>=0;});
 }
 function setYo(v){const nv=(yoActual()===v)?'':v;try{localStorage.setItem('pitYo',nv);}catch(e){}pintarYo();if(ASIST.data)pintarAsist();}
 function pintarYo(){
